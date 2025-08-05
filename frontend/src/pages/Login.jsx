@@ -71,7 +71,7 @@ export default function Login() {
   };
 
   const handleNavigateToRegister = () => {
-    navigate('/');
+    navigate('/registro');
   };
 
   return (

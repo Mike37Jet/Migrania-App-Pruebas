@@ -8,6 +8,10 @@ import {
     compararFechas,
     formatearFecha
 } from "../../utils/funciones.js";
+import BotonNotificacion from "../../features/feature_Grupo3_Recordatorios/components/notificationPanel/BotonNotificacion";
+import ModalNotificaciones from "../../features/feature_Grupo3_Recordatorios/components/notificationPanel/ModalNotificaciones";
+import AlertaPopup from "../../features/feature_Grupo3_Recordatorios/components/notification/AlertaPopup";
+import RecordatorioPopup from "../../features/feature_Grupo3_Recordatorios/components/notification/RecordatorioPopup";
 
 const TARJETAS_DASHBOARD = [
     {
@@ -52,6 +56,14 @@ export default function Dashboard() {
     const [episodiosRecientes, setEpisodiosRecientes] = useState([]);
     const [cargandoEpisodios, setCargandoEpisodios] = useState(true);
     const [errorEpisodios, setErrorEpisodios] = useState(null);
+    
+    // Estados para las notificaciones
+    const [modalNotificacionesAbierto, setModalNotificacionesAbierto] = useState(false);
+    const [alertaPopupAbierto, setAlertaPopupAbierto] = useState(false);
+    const [recordatorioPopupAbierto, setRecordatorioPopupAbierto] = useState(false);
+    const [tieneNotificaciones, setTieneNotificaciones] = useState(true);
+    const [contadorNotificaciones, setContadorNotificaciones] = useState(3);
+    const [tratamientoId] = useState(1); // ID del tratamiento actual
 
     const procesarEpisodios = (episodios) => {
         if (!Array.isArray(episodios)) {
@@ -121,6 +133,30 @@ export default function Dashboard() {
         } catch (error) {
             console.error("Error en la petición:", error);
         }
+    };
+
+    // Funciones para manejar las notificaciones
+    const handleAbrirModalNotificaciones = () => {
+        setModalNotificacionesAbierto(true);
+    };
+
+    const handleCerrarModalNotificaciones = () => {
+        setModalNotificacionesAbierto(false);
+    };
+
+    const handleConfirmarAlerta = () => {
+        setAlertaPopupAbierto(false);
+        console.log('Alerta confirmada');
+    };
+
+    const handleCancelarAlerta = () => {
+        setAlertaPopupAbierto(false);
+        console.log('Alerta cancelada');
+    };
+
+    const handleCerrarRecordatorio = () => {
+        setRecordatorioPopupAbierto(false);
+        console.log('Recordatorio cerrado');
     };
 
     const TarjetaDashboard = ({ icono: Icono, color, backgroundColor, titulo, descripcion, onClick }) => (
@@ -194,7 +230,11 @@ export default function Dashboard() {
                     <h2>¿Cómo te sientes hoy?</h2>
                     <p>¡Vas 5 días sin episodios! Sigue cuidándote y registrando tus síntomas.</p>
                 </div>
-                <BellIcon size={32} color="var(--color-text)" />
+                <BotonNotificacion 
+                    onClick={handleAbrirModalNotificaciones}
+                    hasNotifications={tieneNotificaciones}
+                    notificationCount={contadorNotificaciones}
+                />
             </div>
 
             <section className={styles["dashboard__contenedor-tarjetas"]}>
@@ -249,6 +289,28 @@ export default function Dashboard() {
                     <button className="btn-primary">Agendar</button>
                 </section>
             </div>
+
+            {/* Componentes de notificaciones */}
+            <ModalNotificaciones 
+                isOpen={modalNotificacionesAbierto}
+                onClose={handleCerrarModalNotificaciones}
+                tratamientoId={tratamientoId}
+            />
+
+            <AlertaPopup 
+                isOpen={alertaPopupAbierto}
+                onConfirm={handleConfirmarAlerta}
+                onCancel={handleCancelarAlerta}
+                title="¿Tomaste la medicación?"
+                message="Confirma si has tomado tu medicamento según lo prescrito"
+            />
+
+            <RecordatorioPopup 
+                isOpen={recordatorioPopupAbierto}
+                onClose={handleCerrarRecordatorio}
+                type="medicina"
+                message="Recuerda tomar tu medicamento según las indicaciones médicas"
+            />
         </>
     );
 }

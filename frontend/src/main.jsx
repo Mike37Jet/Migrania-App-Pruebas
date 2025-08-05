@@ -15,7 +15,8 @@ import MDashboard from './features/feature_Grupo5_AgendamientoCitas/pages/Dashbo
 
 import BDoctor from '@/features/feature_Grupo2_BitacoraAsistidaCefalea/pages/Bitacora-Medico.jsx'
 import BPaciente from '@/features/feature_Grupo2_BitacoraAsistidaCefalea/pages/Bitacora-Paciente.jsx'
-import Registro from '@/features/feature_Grupo2_BitacoraAsistidaCefalea/pages/Registro-cefalea.jsx'
+import RegistroCefalea from '@/features/feature_Grupo2_BitacoraAsistidaCefalea/pages/Registro-cefalea.jsx'
+import Registro from './features/feature_Grupo3_Recordatorios/pages/Registro.jsx'
 
 import MidasMedico from './features/feature_Grupo1_EvaluacionMidas/pages/MidasMedico.jsx'
 import MidasEstadisticas from './features/feature_Grupo1_EvaluacionMidas/pages/MidasEstadisticas.jsx'
@@ -42,6 +43,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/midas/historial" element={<MidasMedico />} />
         <Route path="/bitacora-paciente" element={<BPaciente />} />
         <Route path="/registro" element={<Registro />} />
+        <Route path="/registro-cefalea" element={<RegistroCefalea />} />
         <Route path="/dashboard-paciente" element={<Dashboard />} />
         <Route path="/dashboard-medico" element={<MDashboard />} />
         <Route path="/midas" element={<Midas />} />

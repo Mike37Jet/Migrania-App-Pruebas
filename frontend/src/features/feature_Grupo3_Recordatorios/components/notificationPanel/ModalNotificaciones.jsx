@@ -5,7 +5,7 @@ import ConfigurationButtons from './BotonesDeConfiguracion';
 import styles from '../../styles/ModalNotificaciones.module.css';
 import NotificacionesService from '../../services/notificacionesService';
 
-const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1 }) => {
+const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1, notificacionesExternas = null, onNotificacionesChange = null }) => {
   const [estadoNotificaciones, setEstadoNotificaciones] = useState('sonido');
   const [notificaciones, setNotificaciones] = useState([]);
   const [cargando, setCargando] = useState(false);
@@ -128,10 +128,17 @@ const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1 }) => {
   }, [tratamientoId]);
 
   useEffect(() => {
-    if (isOpen && tratamientoId) {
-      cargarNotificaciones();
+    if (isOpen) {
+      if (notificacionesExternas) {
+        // Usar notificaciones que vienen del Dashboard
+        setNotificaciones(notificacionesExternas);
+        setCargando(false);
+      } else if (tratamientoId) {
+        // Cargar notificaciones si no vienen del Dashboard
+        cargarNotificaciones();
+      }
     }
-  }, [isOpen, tratamientoId, cargarNotificaciones]);
+  }, [isOpen, tratamientoId, cargarNotificaciones, notificacionesExternas]);
 
   const handleSonido = () => setEstadoNotificaciones('sonido');
   const handleSilenciar = () => setEstadoNotificaciones('silencio');
@@ -151,7 +158,13 @@ const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1 }) => {
       await Promise.allSettled(promesas);
       
       // Recargar notificaciones después de borrarlas
-      await cargarNotificaciones();
+      if (notificacionesExternas && onNotificacionesChange) {
+        // Si vienen del Dashboard, notificar que cambien
+        onNotificacionesChange();
+      } else {
+        // Si se cargan internamente, recargar
+        await cargarNotificaciones();
+      }
       
       console.log('Todas las notificaciones han sido procesadas');
     } catch (error) {

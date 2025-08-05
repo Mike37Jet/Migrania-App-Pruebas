@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from "../../common/styles/dashboardPaciente.module.css";
-import { BellIcon, StethoscopeIcon, ChartLineIcon, FilesIcon, PillIcon, PlusIcon, BrainIcon } from "@phosphor-icons/react";
+import { BellIcon, StethoscopeIcon, ChartLineIcon, FilesIcon, PillIcon, PlusIcon, BrainIcon, AlarmIcon, LightbulbFilamentIcon, SirenIcon } from "@phosphor-icons/react";
 import { fetchEpisodiosPaciente } from "../../utils/apiUtils.js";
 import {
     obtenerFechaEpisodio,
@@ -64,6 +64,7 @@ export default function Dashboard() {
     const [recordatorioPopupAbierto, setRecordatorioPopupAbierto] = useState(false);
     const [tieneNotificaciones, setTieneNotificaciones] = useState(false);
     const [contadorNotificaciones, setContadorNotificaciones] = useState(0);
+    const [notificaciones, setNotificaciones] = useState([]);
     const [tratamientoId] = useState(1); // ID del tratamiento actual
 
     const procesarEpisodios = (episodios) => {
@@ -77,8 +78,22 @@ export default function Dashboard() {
             .slice(0, 4);
     };
 
-    // Función para cargar el contador de notificaciones
-    const cargarContadorNotificaciones = async () => {
+    // Función para obtener el icono según el tipo
+    const obtenerIcono = (tipo) => {
+        switch (tipo) {
+            case 'medicacion':
+                return <AlarmIcon size={32} color="#bad8ecff" weight="fill" />;
+            case 'recordatorio':
+                return <LightbulbFilamentIcon size={32} color="#f5e400ff" weight="fill" />;
+            case 'alerta':
+                return <SirenIcon size={32} color="#AA4D53" weight="fill" />;
+            default:
+                return <AlarmIcon size={32} color="#bad8ecff" weight="fill" />;
+        }
+    };
+
+    // Función para cargar las notificaciones completas y el contador
+    const cargarNotificaciones = async () => {
         try {
             const [alertasData, recordatoriosData, notificacionesPendientes] = await Promise.allSettled([
                 NotificacionesService.obtenerAlertas(tratamientoId),
@@ -86,45 +101,103 @@ export default function Dashboard() {
                 NotificacionesService.obtenerNotificacionesPendientes(tratamientoId)
             ]);
 
+            const todasLasNotificaciones = [];
             let contador = 0;
 
-            // Contar alertas activas no confirmadas
+            // Procesar alertas
             if (alertasData.status === 'fulfilled' && alertasData.value) {
                 const alertas = Array.isArray(alertasData.value) ? alertasData.value : [alertasData.value];
-                contador += alertas.filter(alerta => alerta.activa && !alerta.confirmada).length;
+                alertas.forEach(alerta => {
+                    if (alerta.activa && !alerta.confirmada) {
+                        const notifFormateada = NotificacionesService.formatearNotificacion(alerta, 'alerta');
+                        notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
+                        todasLasNotificaciones.push(notifFormateada);
+                        contador++;
+                    }
+                });
             }
 
-            // Contar recordatorios activos
+            // Procesar recordatorios
             if (recordatoriosData.status === 'fulfilled' && recordatoriosData.value) {
                 const recordatorios = Array.isArray(recordatoriosData.value) ? recordatoriosData.value : [recordatoriosData.value];
-                contador += recordatorios.filter(recordatorio => recordatorio.activo).length;
+                recordatorios.forEach(recordatorio => {
+                    if (recordatorio.activo) {
+                        const notifFormateada = NotificacionesService.formatearNotificacion(recordatorio, 'recordatorio');
+                        notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
+                        todasLasNotificaciones.push(notifFormateada);
+                        contador++;
+                    }
+                });
             }
 
-            // Contar notificaciones pendientes
+            // Procesar notificaciones pendientes
             if (notificacionesPendientes.status === 'fulfilled' && notificacionesPendientes.value) {
                 const pendientes = notificacionesPendientes.value;
                 if (pendientes.alertas) {
-                    contador += pendientes.alertas.length;
+                    pendientes.alertas.forEach(alerta => {
+                        const notifFormateada = NotificacionesService.formatearNotificacion(alerta, 'alerta');
+                        notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
+                        todasLasNotificaciones.push(notifFormateada);
+                        contador++;
+                    });
                 }
                 if (pendientes.recordatorios) {
-                    contador += pendientes.recordatorios.length;
+                    pendientes.recordatorios.forEach(recordatorio => {
+                        const notifFormateada = NotificacionesService.formatearNotificacion(recordatorio, 'recordatorio');
+                        notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
+                        todasLasNotificaciones.push(notifFormateada);
+                        contador++;
+                    });
                 }
             }
 
-            // Si no hay datos de la API, usar datos de fallback (simulados)
-            if (contador === 0 && 
+            // Si no hay notificaciones de la API, usar datos de fallback
+            if (todasLasNotificaciones.length === 0 && 
                 alertasData.status === 'rejected' && 
                 recordatoriosData.status === 'rejected' && 
                 notificacionesPendientes.status === 'rejected') {
-                contador = 2; // Fallback: simular 2 notificaciones
+                const fallbackNotificaciones = [
+                    {
+                        id: 'fallback-1',
+                        tipo: 'medicacion',
+                        titulo: 'Es hora de prepararte para tu medicación',
+                        mensaje: 'Toma tu medicamento según la prescripción médica',
+                        tiempo: 'Ahora',
+                        icono: obtenerIcono('medicacion')
+                    },
+                    {
+                        id: 'fallback-2',
+                        tipo: 'recordatorio',
+                        titulo: 'Recuerda:',
+                        mensaje: 'Mantén un estilo de vida saludable',
+                        tiempo: '1h',
+                        icono: obtenerIcono('recordatorio')
+                    }
+                ];
+                setNotificaciones(fallbackNotificaciones);
+                contador = fallbackNotificaciones.length;
+            } else {
+                setNotificaciones(todasLasNotificaciones);
             }
 
             setContadorNotificaciones(contador);
             setTieneNotificaciones(contador > 0);
 
         } catch (error) {
-            console.error('Error cargando contador de notificaciones:', error);
-            // En caso de error, mostrar indicador de notificaciones con contador 1
+            console.error('Error cargando notificaciones:', error);
+            
+            // En caso de error, mostrar notificaciones de fallback
+            const errorNotificaciones = [
+                {
+                    id: 'error-1',
+                    tipo: 'alerta',
+                    titulo: 'Error de conexión',
+                    mensaje: 'No se pudieron cargar las notificaciones',
+                    tiempo: 'Ahora',
+                    icono: obtenerIcono('alerta')
+                }
+            ];
+            setNotificaciones(errorNotificaciones);
             setContadorNotificaciones(1);
             setTieneNotificaciones(true);
         }
@@ -151,8 +224,8 @@ export default function Dashboard() {
     }, []);
 
     useEffect(() => {
-        // Cargar contador de notificaciones al montar el componente
-        cargarContadorNotificaciones();
+        // Cargar notificaciones al montar el componente
+        cargarNotificaciones();
     }, [tratamientoId]);
 
     const handleNavegacion = (ruta) => {
@@ -201,15 +274,15 @@ export default function Dashboard() {
 
     const handleCerrarModalNotificaciones = () => {
         setModalNotificacionesAbierto(false);
-        // Recargar contador cuando se cierre el modal por si se procesaron notificaciones
-        cargarContadorNotificaciones();
+        // Recargar notificaciones cuando se cierre el modal por si se procesaron notificaciones
+        cargarNotificaciones();
     };
 
     const handleConfirmarAlerta = () => {
         setAlertaPopupAbierto(false);
         console.log('Alerta confirmada');
-        // Recargar contador después de confirmar alerta
-        cargarContadorNotificaciones();
+        // Recargar notificaciones después de confirmar alerta
+        cargarNotificaciones();
     };
 
     const handleCancelarAlerta = () => {
@@ -220,8 +293,8 @@ export default function Dashboard() {
     const handleCerrarRecordatorio = () => {
         setRecordatorioPopupAbierto(false);
         console.log('Recordatorio cerrado');
-        // Recargar contador después de cerrar recordatorio
-        cargarContadorNotificaciones();
+        // Recargar notificaciones después de cerrar recordatorio
+        cargarNotificaciones();
     };
 
     const TarjetaDashboard = ({ icono: Icono, color, backgroundColor, titulo, descripcion, onClick }) => (
@@ -360,6 +433,8 @@ export default function Dashboard() {
                 isOpen={modalNotificacionesAbierto}
                 onClose={handleCerrarModalNotificaciones}
                 tratamientoId={tratamientoId}
+                notificacionesExternas={notificaciones}
+                onNotificacionesChange={cargarNotificaciones}
             />
 
             <AlertaPopup 

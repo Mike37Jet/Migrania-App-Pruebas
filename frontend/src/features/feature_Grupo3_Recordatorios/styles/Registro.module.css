@@ -1,0 +1,197 @@
+.registro {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Cambiar de center a flex-start */
+    min-height: 100vh; /* Cambiar de 90vh a 100vh */
+    background-color: var(--color-body-background); 
+    padding: var(--spacing-m);
+    /* Remover overflow-y: auto de aquí */
+    box-sizing: border-box; 
+}
+
+.registro__tarjeta{
+    width: 100%;
+    max-width: 500px; 
+    background-color: var(--color-background); 
+    padding: var(--spacing-xxl); 
+    border-radius: var(--border-radius); 
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-l);
+    position: relative;
+    margin: var(--spacing-m) 0; /* Agregar margen vertical */
+    min-height: auto; /* Permitir que la tarjeta crezca según el contenido */
+    /* Agregar estas propiedades para asegurar el scroll */
+    max-height: none;
+    overflow: visible;
+}
+
+.registro__titulo  {
+    font-size: 48px; 
+    font-weight: var(--font-weight-bold);
+    text-align: center;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-m);
+}
+
+.registro__formulario{
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-l); 
+}
+
+.registro__grupo-input {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-s); 
+}
+
+.registro__grupo-input label {
+    color: var(--color-text);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-normal);
+}
+
+/* Agregar estilos para todos los inputs */
+.registro__grupo-input input {
+    padding: var(--spacing-xs);
+    border: 1px solid var(--color-border, var(--color-text-muted));
+    border-radius: var(--border-radius);
+    background-color: var(--color-text);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-s);
+    font-family: inherit;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.registro__grupo-input input:focus {
+    outline: none;
+    border-color: var(--color-action);
+    box-shadow: 0 0 0 2px rgba(var(--color-action-rgb, 74, 144, 226), 0.2);
+}
+
+.registro__grupo-input input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Asegurar que el input de password en su contenedor también tenga los estilos */
+.registro__contenedor-password input {
+    padding: var(--spacing-xs);
+    padding-right: 45px;
+    border: 1px solid var(--color-border, var(--color-text-muted));
+    border-radius: var(--border-radius);
+    background-color: var(--color-text);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-s);
+    font-family: inherit;
+    transition: border-color 0.2s ease-in-out;
+    width: 100%;
+}
+
+.registro__boton {
+    background-color: var(--color-action);
+    color: var(--color-text);
+    padding: var(--spacing-m);
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+    font-size: var(--font-size-s);
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+    transition: background-color 0.2s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none; 
+}
+
+.registro__boton:hover {
+    background-color: var(--color-action-hover);
+}
+
+.registro__mensaje-error{
+    color: var(--color-error);
+    background-color: rgba(170, 77, 83, 0.1);
+    border: 1px solid var(--color-error);
+    padding: var(--spacing-s);
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-size: var(--font-size-xs);
+}
+
+.registro__contenedor-password {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.registro__contenedor-password input {
+    padding-right: 45px;
+}
+
+.registro__contenedor-password input::-ms-reveal,
+.registro__contenedor-password input::-webkit-password-reveal-button {
+  display: none;
+}
+
+.registro__icono-password {
+    position: absolute;
+    right: 15px;
+    cursor: pointer;
+    color: var(--color-text-disabled); 
+    display: flex;
+    align-items: center;
+    transition: color 0.2s; 
+}
+
+.registro__icono-password:hover {
+    color: #282828; 
+}
+
+.registro__boton-volver {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text);
+    transition: color 0.3s ease;
+    z-index: 10; 
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.registro__boton-volver:hover {
+    color: var(--color-action-hover);
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.registro__select {
+    padding: var(--spacing-xs);
+    border: 1px solid var(--color-border, --color-text-muted);
+    border-radius: var(--border-radius);
+    background-color: var(--color-text);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-s);
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.registro__select:focus {
+    outline: none;
+    border-color: var(--color-action);
+    box-shadow: 0 0 0 2px rgba(var(--color-action-rgb, 74, 144, 226), 0.2);
+}
+
+.registro__select option {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    padding: var(--spacing-s);
+    border-radius: var(--border-radius);
+}

@@ -19,7 +19,6 @@ export default function TablaExpandible({ data = [], keyField = "id" }) {
             <tbody>
                 {data.map((registro) => {
 
-
                     return (
                         <React.Fragment key={registro[keyField]}>
                             <tr

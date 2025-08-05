@@ -1,0 +1,110 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: var(--spacing-m);
+  z-index: 1000;
+}
+
+.modal {
+  background-color: var(--color-background);
+  border-radius: var(--border-radius);
+  width: 100%;
+  max-width: 375px;
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+  display: flex;
+  flex-direction: column; 
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.header {
+  padding: var(--spacing-l) var(--spacing-l) var(--spacing-m) var(--spacing-l);
+  border-bottom: none;
+}
+
+.titulo {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+  text-align: left;
+}
+
+.cerrarBtn {
+  display: none; 
+}
+
+.notificacionesList {
+  padding: 0 var(--spacing-l) var(--spacing-l) var(--spacing-l);
+  max-height: 300px; 
+  overflow-y: auto;
+  flex: 1; 
+}
+
+.notificacionesList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notificacionesList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notificacionesList::-webkit-scrollbar-thumb {
+  background: var(--color-secondary-dark);
+  border-radius: 3px;
+}
+
+.borrarTodoBtn {
+  width: 100%;
+  padding: var(--spacing-m);
+  border: none;
+  background-color: transparent;
+  color: var(--color-text);
+  font-family: var(--font-main);
+  font-size: 16px;
+  cursor: pointer;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; 
+  margin-top: auto; 
+}
+
+.borrarTodoBtn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 768px) {
+  .overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+  
+  .modal {
+    max-width: none;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+}

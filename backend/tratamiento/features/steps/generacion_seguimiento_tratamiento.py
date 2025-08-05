@@ -289,4 +289,3 @@ def crear_episodio_dummy(paciente, tipo_migraña):
         anticonceptivos=False,
         categoria_diagnostica=tipo_migraña
     )
-

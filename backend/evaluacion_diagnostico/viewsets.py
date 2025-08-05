@@ -3,12 +3,10 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from .models import Pregunta, Respuesta, AutoevaluacionMidas
 from .permissions import EsPaciente, EsPropietarioDeLaAutoevaluacionOPersonalMedico
-
 from .episodio_cefalea_service import episodio_cefalea_service
 from .models import EpisodioCefalea
 from .permissions import EsPropietarioDelEpisodioOPersonalMedico
 from .serializers import CrearEpisodioCefaleaSerializer, EpisodioCefaleaSerializer
-
 
 from .serializers import (
     PreguntaSerializer,

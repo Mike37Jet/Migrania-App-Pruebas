@@ -13,6 +13,8 @@ import ModalNotificaciones from "../../features/feature_Grupo3_Recordatorios/com
 import AlertaPopup from "../../features/feature_Grupo3_Recordatorios/components/notification/AlertaPopup";
 import RecordatorioPopup from "../../features/feature_Grupo3_Recordatorios/components/notification/RecordatorioPopup";
 import NotificacionesService from "../../features/feature_Grupo3_Recordatorios/services/notificacionesService";
+import useDetectorNotificacionesEmergentes from "../../features/feature_Grupo3_Recordatorios/hooks/useDetectorNotificacionesEmergentes";
+// ...eliminada importación de BotonTestingSimple...
 
 const TARJETAS_DASHBOARD = [
     {
@@ -65,7 +67,21 @@ export default function Dashboard() {
     const [tieneNotificaciones, setTieneNotificaciones] = useState(false);
     const [contadorNotificaciones, setContadorNotificaciones] = useState(0);
     const [notificaciones, setNotificaciones] = useState([]);
-    const [tratamientoId] = useState(1); // ID del tratamiento actual
+    const [tratamientoId] = useState(6); // ID del tratamiento actual
+    // Estado global para controlar el sonido de notificaciones
+    const [modoSonido, setModoSonido] = useState("sonido"); // "sonido", "silencio", "suspender"
+
+    // Hook para detectar notificaciones emergentes automáticamente
+    const {
+        alertaActual: alertaActiva,
+        recordatorioActual: recordatorioActivo,
+        mostrarAlerta,
+        mostrarRecordatorio,
+        handleConfirmarAlerta: confirmarAlertaEmergente,
+        handleCancelarAlerta: rechazarAlertaEmergente,
+        handleDesactivarRecordatorio: cerrarRecordatorioEmergente,
+        verificarNotificaciones: verificarNotificacionesPendientes
+    } = useDetectorNotificacionesEmergentes(); // Sin parámetros
 
     const procesarEpisodios = (episodios) => {
         if (!Array.isArray(episodios)) {
@@ -95,54 +111,26 @@ export default function Dashboard() {
     // Función para cargar las notificaciones completas y el contador
     const cargarNotificaciones = async () => {
         try {
-            const [alertasData, recordatoriosData, notificacionesPendientes] = await Promise.allSettled([
-                NotificacionesService.obtenerAlertas(tratamientoId),
-                NotificacionesService.obtenerRecordatorios(tratamientoId),
-                NotificacionesService.obtenerNotificacionesPendientes(tratamientoId)
-            ]);
+            // Solo usar el endpoint de notificaciones pendientes (evita llamadas duplicadas)
+            const notificacionesPendientes = await NotificacionesService.obtenerNotificacionesPendientes(tratamientoId);
 
             const todasLasNotificaciones = [];
             let contador = 0;
 
-            // Procesar alertas
-            if (alertasData.status === 'fulfilled' && alertasData.value) {
-                const alertas = Array.isArray(alertasData.value) ? alertasData.value : [alertasData.value];
-                alertas.forEach(alerta => {
-                    if (alerta.activa && !alerta.confirmada) {
-                        const notifFormateada = NotificacionesService.formatearNotificacion(alerta, 'alerta');
-                        notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
-                        todasLasNotificaciones.push(notifFormateada);
-                        contador++;
-                    }
-                });
-            }
-
-            // Procesar recordatorios
-            if (recordatoriosData.status === 'fulfilled' && recordatoriosData.value) {
-                const recordatorios = Array.isArray(recordatoriosData.value) ? recordatoriosData.value : [recordatoriosData.value];
-                recordatorios.forEach(recordatorio => {
-                    if (recordatorio.activo) {
-                        const notifFormateada = NotificacionesService.formatearNotificacion(recordatorio, 'recordatorio');
-                        notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
-                        todasLasNotificaciones.push(notifFormateada);
-                        contador++;
-                    }
-                });
-            }
-
-            // Procesar notificaciones pendientes
-            if (notificacionesPendientes.status === 'fulfilled' && notificacionesPendientes.value) {
-                const pendientes = notificacionesPendientes.value;
-                if (pendientes.alertas) {
-                    pendientes.alertas.forEach(alerta => {
+            if (notificacionesPendientes && notificacionesPendientes.total > 0) {
+                // Procesar alertas
+                if (notificacionesPendientes.alertas) {
+                    notificacionesPendientes.alertas.forEach(alerta => {
                         const notifFormateada = NotificacionesService.formatearNotificacion(alerta, 'alerta');
                         notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
                         todasLasNotificaciones.push(notifFormateada);
                         contador++;
                     });
                 }
-                if (pendientes.recordatorios) {
-                    pendientes.recordatorios.forEach(recordatorio => {
+
+                // Procesar recordatorios
+                if (notificacionesPendientes.recordatorios) {
+                    notificacionesPendientes.recordatorios.forEach(recordatorio => {
                         const notifFormateada = NotificacionesService.formatearNotificacion(recordatorio, 'recordatorio');
                         notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
                         todasLasNotificaciones.push(notifFormateada);
@@ -150,12 +138,15 @@ export default function Dashboard() {
                     });
                 }
             }
+
+            // Agregar conteo de notificaciones emergentes activas
+            let contadorEmergentes = 0;
+            if (alertaActiva) contadorEmergentes++;
+            if (recordatorioActivo) contadorEmergentes++;
+            contador += contadorEmergentes;
 
             // Si no hay notificaciones de la API, usar datos de fallback
-            if (todasLasNotificaciones.length === 0 && 
-                alertasData.status === 'rejected' && 
-                recordatoriosData.status === 'rejected' && 
-                notificacionesPendientes.status === 'rejected') {
+            if (todasLasNotificaciones.length === 0 && contadorEmergentes === 0) {
                 const fallbackNotificaciones = [
                     {
                         id: 'fallback-1',
@@ -224,9 +215,9 @@ export default function Dashboard() {
     }, []);
 
     useEffect(() => {
-        // Cargar notificaciones al montar el componente
+        // Cargar notificaciones al montar el componente y cuando cambien las emergentes
         cargarNotificaciones();
-    }, [tratamientoId]);
+    }, [tratamientoId, alertaActiva, recordatorioActivo]);
 
     const handleNavegacion = (ruta) => {
         navigate(ruta);
@@ -276,6 +267,28 @@ export default function Dashboard() {
         setModalNotificacionesAbierto(false);
         // Recargar notificaciones cuando se cierre el modal por si se procesaron notificaciones
         cargarNotificaciones();
+        // También forzar verificación de notificaciones emergentes
+        verificarNotificacionesPendientes();
+    };
+
+    // Función específica para manejar la limpieza del modal (solo frontend)
+    const handleLimpiarModalNotificaciones = () => {
+        // Solo actualizar el contador y estado de notificaciones del modal
+        // Los popups emergentes siguen independientes
+        setContadorNotificaciones(prev => {
+            // Mantener el conteo de emergentes activas
+            let contadorEmergentes = 0;
+            if (alertaActiva) contadorEmergentes++;
+            if (recordatorioActivo) contadorEmergentes++;
+            return contadorEmergentes;
+        });
+        
+        setTieneNotificaciones(prev => {
+            // Hay notificaciones si hay emergentes activas
+            return !!(alertaActiva || recordatorioActivo);
+        });
+
+        console.log('Modal de notificaciones limpiado (solo frontend)');
     };
 
     const handleConfirmarAlerta = () => {
@@ -434,23 +447,66 @@ export default function Dashboard() {
                 onClose={handleCerrarModalNotificaciones}
                 tratamientoId={tratamientoId}
                 notificacionesExternas={notificaciones}
-                onNotificacionesChange={cargarNotificaciones}
+                onNotificacionesChange={handleLimpiarModalNotificaciones}
+                modoSonido={modoSonido}
+                setModoSonido={setModoSonido}
             />
 
-            <AlertaPopup 
-                isOpen={alertaPopupAbierto}
-                onConfirm={handleConfirmarAlerta}
-                onCancel={handleCancelarAlerta}
-                title="¿Tomaste la medicación?"
-                message="Confirma si has tomado tu medicamento según lo prescrito"
-            />
+            {/* 
+              Popups emergentes automáticos - INDEPENDIENTES del modal
+              - Aparecen cuando el backend tiene notificaciones con estado SIN_CONFIRMAR/ACTIVO
+              - Tienen sus propios botones para desactivar en el backend
+              - No se ven afectados por el botón "Borrar todo" del modal
+            */}
+            {modoSonido !== "suspender" && (
+                <AlertaPopup 
+                    isOpen={mostrarAlerta && !!alertaActiva}
+                    onConfirm={confirmarAlertaEmergente}
+                    onCancel={rechazarAlertaEmergente}
+                    title={alertaActiva?.titulo || "¿Tomaste la medicación?"}
+                    message={alertaActiva?.mensaje || "Confirma si has tomado tu medicamento según lo prescrito"}
+                    alertaId={alertaActiva?.id}
+                    modoSonido={modoSonido}
+                    horaMedicacion={alertaActiva?.hora || alertaActiva?.hora_medicacion || null}
+                />
+            )}
 
-            <RecordatorioPopup 
-                isOpen={recordatorioPopupAbierto}
-                onClose={handleCerrarRecordatorio}
-                type="medicina"
-                message="Recuerda tomar tu medicamento según las indicaciones médicas"
-            />
+            {modoSonido !== "suspender" && (
+                <RecordatorioPopup 
+                    isOpen={mostrarRecordatorio && !!recordatorioActivo}
+                    onClose={cerrarRecordatorioEmergente}
+                    type={recordatorioActivo?.tipo || "medicina"}
+                    message={recordatorioActivo?.mensaje || "Recuerda tomar tu medicamento según las indicaciones médicas"}
+                    recordatorioId={recordatorioActivo?.id}
+                    modoSonido={modoSonido}
+                />
+            )}
+
+            {/* Popups manuales (para casos específicos si es necesario) */}
+            {modoSonido !== "suspender" && (
+                <AlertaPopup 
+                    isOpen={alertaPopupAbierto}
+                    onConfirm={handleConfirmarAlerta}
+                    onCancel={handleCancelarAlerta}
+                    title="¿Tomaste la medicación?"
+                    message="Confirma si has tomado tu medicamento según lo prescrito"
+                    modoSonido={modoSonido}
+                    horaMedicacion={null}
+                />
+            )}
+
+            {modoSonido !== "suspender" && (
+                <RecordatorioPopup 
+                    isOpen={recordatorioPopupAbierto}
+                    onClose={handleCerrarRecordatorio}
+                    type="medicina"
+                    message="Recuerda tomar tu medicamento según las indicaciones médicas"
+                    modoSonido={modoSonido}
+                />
+            )}
+
+            {/* Botón de testing para simular notificaciones */}
+            {/* ...eliminado BotonTestingSimple... */}
         </>
     );
 }

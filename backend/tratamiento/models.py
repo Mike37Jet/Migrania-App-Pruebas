@@ -86,7 +86,7 @@ class Alerta(Notificacion):
     def enviar(self):
         if self.estado == EstadoNotificacion.ACTIVO:
             self.estado = EstadoNotificacion.SIN_CONFIRMAR
-            logger.info(f"Alerta enviada: {self.mensaje} - Número: {self.numero_alerta}")
+            # logger eliminado
             return True
         return False
 
@@ -101,13 +101,13 @@ class Alerta(Notificacion):
         self.estado = EstadoNotificacion.CONFIRMADO_NO_TOMADO
 
         if siguiente_numero > 3:
-            logger.info(f"Máximo de alertas alcanzado. Marcando como no tomado: {self.mensaje}")
+            # logger eliminado
             return None
 
-        # Crear nueva alerta
+        # Crear nueva alerta programada para tiempo_espera minutos después
         nueva_alerta = Alerta(
             mensaje=f"{self.mensaje.split(' (Alerta')[0]} (Alerta #{siguiente_numero})",
-            fecha_hora=ahora,
+            fecha_hora=ahora + timezone.timedelta(minutes=self.tiempo_espera),  # Usar tiempo_espera
             estado=EstadoNotificacion.ACTIVO,
             tratamiento=self.tratamiento,
             numero_alerta=siguiente_numero,
@@ -135,12 +135,12 @@ class Alerta(Notificacion):
         else:
             self.estado = EstadoNotificacion.CONFIRMADO_TOMADO_MUY_TARDE
 
-        logger.info(f"Medicamento confirmado como tomado: {self.mensaje} - Estado: {self.estado}")
+        # logger eliminado
         return self.estado
 
     def confirmarNoTomado(self):
         self.estado = EstadoNotificacion.CONFIRMADO_NO_TOMADO
-        logger.info(f"Medicamento confirmado como NO tomado: {self.mensaje}")
+        # logger eliminado
 
     def __str__(self):
         return f"Alerta #{self.numero_alerta}: {self.mensaje} - {self.estado}"
@@ -148,7 +148,7 @@ class Alerta(Notificacion):
 class Recordatorio(Notificacion):
     """Modelo para recordatorios de medicamentos y recomendaciones"""
     def enviar(self):
-        logger.info(f"Recordatorio enviado: {self.mensaje}")
+        # logger eliminado
         self.estado = EstadoNotificacion.ACTIVO
         return True
 
@@ -162,10 +162,10 @@ class Tratamiento(models.Model):
         related_name='tratamiento',
         verbose_name='Episodio de Cefalea'
     )
-    paciente = models.ForeignKey(
+    paciente = models.OneToOneField(
         PacienteProfile,
         on_delete=models.CASCADE,
-        related_name='tratamientos',
+        related_name='tratamiento',
         verbose_name='Paciente'
     )
     medicamentos = models.ManyToManyField(Medicamento)
@@ -214,18 +214,24 @@ class Tratamiento(models.Model):
             fecha_actual = timezone.now().date()
 
         todas_notificaciones = []
+        
+        # logs eliminados
 
         # Generar notificaciones de medicamentos
         for medicamento in self.medicamentos.all():
+            # logs eliminados
             notificaciones_med = self._generar_notificaciones_medicamento(medicamento, fecha_actual)
+            # logs eliminados
             todas_notificaciones.extend(notificaciones_med)
 
         # Generar notificaciones de recomendaciones
         for rec in self.recomendaciones:
+            # logs eliminados
             notificaciones_rec = self._generar_notificaciones_recomendacion(rec, fecha_actual)
+            # logs eliminados
             todas_notificaciones.extend(notificaciones_rec)
 
-        logger.info(f"Generadas {len(todas_notificaciones)} notificaciones para el tratamiento")
+        # logs eliminados
         return todas_notificaciones
 
     def _generar_notificaciones_medicamento(self, medicamento, fecha_actual=None):
@@ -233,12 +239,18 @@ class Tratamiento(models.Model):
             fecha_actual = timezone.now().date()
 
         notificaciones = []
+        
+        # logs eliminados
 
         # Calcular todas las fechas de tomas sin límite
         fechas_tomas = medicamento.calcularFechasDeTomas(self.fecha_inicio)
+        # logs eliminados
+        
         fechas_recordatorios = medicamento.calcularRecordatorios(fechas_tomas)
+        # logs eliminados
 
         # Recordatorios
+        recordatorios_creados = 0
         for fecha_recordatorio in fechas_recordatorios:
             # Verificar si ya existe un recordatorio similar
             if not self._existe_recordatorio_similar(fecha_recordatorio):
@@ -249,8 +261,12 @@ class Tratamiento(models.Model):
                     tratamiento=self
                 )
                 notificaciones.append(recordatorio)
+                recordatorios_creados += 1
+            else:
+                pass
 
         # Alertas
+        alertas_creadas = 0
         for fecha_toma in fechas_tomas:
             # Verificar si ya existe una alerta similar
             if not self._existe_alerta_similar(fecha_toma):
@@ -264,8 +280,11 @@ class Tratamiento(models.Model):
                     tiempo_espera=15
                 )
                 notificaciones.append(alerta)
+                alertas_creadas += 1
+            else:
+                pass
 
-        logger.info(f"Generadas {len(notificaciones)} notificaciones para medicamento {medicamento.nombre}")
+        # logs eliminados
         return notificaciones
 
     def _generar_notificaciones_recomendacion(self, recomendacion, fecha_actual=None):
@@ -300,9 +319,9 @@ class Tratamiento(models.Model):
                 tratamiento=self
             )
             notificaciones.append(recordatorio)
-            logger.info(f"Creando recordatorio para recomendación {recomendacion} para fecha {hora_recomendacion}")
+            # logs eliminados
 
-        logger.info(f"Generadas {len(notificaciones)} notificaciones para recomendación {recomendacion}")
+        # logs eliminados
         return notificaciones
 
     def _existe_alerta_similar(self, fecha_hora):
@@ -329,7 +348,7 @@ class Tratamiento(models.Model):
             else:
                 return alerta.confirmarNoTomado()
         except Alerta.DoesNotExist:
-            logger.error(f"No se encontró la alerta con ID {alerta_id}")
+            # logs eliminados
             return False
 
     def calcularDuracion(self):
@@ -359,9 +378,20 @@ class Tratamiento(models.Model):
         return alertas or recordatorios
 
     def obtenerNotificacionesPendientes(self):
-        # Combinar alertas y recordatorios activos
-        alertas_pendientes = list(self.alertas.filter(estado=EstadoNotificacion.ACTIVO))
-        recordatorios_pendientes = list(self.recordatorios.filter(estado=EstadoNotificacion.ACTIVO))
+        from django.utils import timezone
+        
+        ahora = timezone.now()
+        
+        # Combinar alertas activas Y sin confirmar con recordatorios activos
+        # PERO solo si ya es tiempo de mostrarlas (fecha_hora <= ahora)
+        alertas_pendientes = list(self.alertas.filter(
+            estado__in=[EstadoNotificacion.ACTIVO, EstadoNotificacion.SIN_CONFIRMAR],
+            fecha_hora__lte=ahora  # Solo las que ya es momento de mostrar
+        ))
+        recordatorios_pendientes = list(self.recordatorios.filter(
+            estado=EstadoNotificacion.ACTIVO,
+            fecha_hora__lte=ahora  # Solo las que ya es momento de mostrar
+        ))
 
         # Ordenar por fecha y hora
         return sorted(alertas_pendientes + recordatorios_pendientes,
@@ -372,7 +402,7 @@ class Tratamiento(models.Model):
             ahora = timezone.now()
 
         if not self.estaActivo(ahora.date()):
-            logger.info(f"No se procesaron notificaciones porque el tratamiento no está activo")
+            # logs eliminados
             return []
 
         notificaciones_procesadas = []

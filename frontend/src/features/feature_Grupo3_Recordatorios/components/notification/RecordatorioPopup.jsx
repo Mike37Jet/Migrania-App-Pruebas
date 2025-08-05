@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LightbulbFilamentIcon, InfoIcon, X } from '@phosphor-icons/react';
 import styles from '../../styles/RecordatorioPopup.module.css';
 import NotificacionesService from '../../services/notificacionesService';
@@ -8,27 +8,38 @@ const RecordatorioPopup = ({
   onClose,
   type,
   message,
-  recordatorioId = null
+  recordatorioId = null,
+  modoSonido = "sonido"
 }) => {
   const [procesando, setProcesando] = useState(false);
 
   const handleClose = async () => {
-    if (recordatorioId) {
-      try {
-        setProcesando(true);
-        await NotificacionesService.desactivarRecordatorio(recordatorioId);
-        console.log('Recordatorio desactivado exitosamente');
-      } catch (error) {
-        console.error('Error desactivando recordatorio:', error);
-      } finally {
-        setProcesando(false);
-      }
-    }
-    
     if (onClose) {
+      // Llamar directamente al handler del hook que se encarga de todo
       onClose();
     }
   };
+  useEffect(() => {
+    if (isOpen && modoSonido === "sonido") {
+      // Sonido estándar (beep)
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(660, audioCtx.currentTime); // Frecuencia beep diferente
+        oscillator.connect(audioCtx.destination);
+        oscillator.start();
+        setTimeout(() => {
+          oscillator.stop();
+          audioCtx.close();
+        }, 200); // Duración del beep
+      } catch (e) {
+        if (typeof window !== 'undefined') {
+          window.alert('¡Recordatorio!');
+        }
+      }
+    }
+  }, [isOpen, modoSonido]);
   if (!isOpen) return null;
 
   // Configuración según el tipo

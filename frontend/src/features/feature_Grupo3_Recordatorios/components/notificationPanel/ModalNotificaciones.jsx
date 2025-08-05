@@ -5,8 +5,8 @@ import ConfigurationButtons from './BotonesDeConfiguracion';
 import styles from '../../styles/ModalNotificaciones.module.css';
 import NotificacionesService from '../../services/notificacionesService';
 
-const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1, notificacionesExternas = null, onNotificacionesChange = null }) => {
-  const [estadoNotificaciones, setEstadoNotificaciones] = useState('sonido');
+const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1, notificacionesExternas = null, onNotificacionesChange = null, modoSonido = "sonido", setModoSonido }) => {
+  // El estado de sonido ahora viene del Dashboard
   const [notificaciones, setNotificaciones] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
@@ -140,35 +140,24 @@ const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1, notificacione
     }
   }, [isOpen, tratamientoId, cargarNotificaciones, notificacionesExternas]);
 
-  const handleSonido = () => setEstadoNotificaciones('sonido');
-  const handleSilenciar = () => setEstadoNotificaciones('silencio');
-  const handleSuspender = () => setEstadoNotificaciones('suspender');
+  const handleSonido = () => setModoSonido && setModoSonido('sonido');
+  const handleSilenciar = () => setModoSonido && setModoSonido('silencio');
+  const handleSuspender = () => setModoSonido && setModoSonido('suspender');
 
   const handleBorrarTodo = async () => {
     try {
-      // Confirmar todas las alertas y desactivar todos los recordatorios
-      const promesas = notificaciones.map(async (notif) => {
-        if (notif.tipo === 'medicacion' || notif.tipo === 'alerta') {
-          return NotificacionesService.confirmarAlerta(notif.id);
-        } else if (notif.tipo === 'recordatorio') {
-          return NotificacionesService.desactivarRecordatorio(notif.id);
-        }
-      });
-
-      await Promise.allSettled(promesas);
+      // Solo limpiar la lista visual del modal (frontend)
+      setNotificaciones([]); // Limpiar la lista inmediatamente
       
-      // Recargar notificaciones después de borrarlas
-      if (notificacionesExternas && onNotificacionesChange) {
-        // Si vienen del Dashboard, notificar que cambien
+      console.log('Lista de notificaciones del modal limpiada');
+      
+      // Opcionalmente, notificar al componente padre que se limpió la lista
+      if (onNotificacionesChange) {
         onNotificacionesChange();
-      } else {
-        // Si se cargan internamente, recargar
-        await cargarNotificaciones();
       }
       
-      console.log('Todas las notificaciones han sido procesadas');
     } catch (error) {
-      console.error('Error borrando notificaciones:', error);
+      console.error('Error limpiando lista de notificaciones:', error);
     }
   };
 
@@ -185,7 +174,7 @@ const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1, notificacione
           onSonido={handleSonido}
           onSilenciar={handleSilenciar}
           onSuspender={handleSuspender}
-          estadoActual={estadoNotificaciones}
+          estadoActual={modoSonido}
         />
 
         <div className={styles.notificacionesList}>

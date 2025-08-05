@@ -220,8 +220,8 @@ class TratamientoService:
         return {
             'recordatorio_id': recordatorio_id,
             'mensaje': recordatorio.mensaje,
-            'estado_anterior': EstadoNotificacion.ACTIVO,
-            'estado_nuevo': recordatorio.estado,
+            'estado_anterior': EstadoNotificacion.ACTIVO.value,
+            'estado_nuevo': recordatorio.estado.value,
             'desactivado': True
         }
 

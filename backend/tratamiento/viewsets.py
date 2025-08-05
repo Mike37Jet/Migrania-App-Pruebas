@@ -1,7 +1,10 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import Tratamiento, Medicamento, Recomendacion, Alerta, Recordatorio
 from .serializers import (
@@ -45,13 +48,37 @@ class TratamientoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save()
 
+    def get_queryset(self):
+        """
+        Filtrar tratamientos según el tipo de usuario:
+        - Pacientes: solo ven sus propios tratamientos
+        - Médicos: ven todos los tratamientos
+        """
+        user = self.request.user
+        logger.info(f"🔍 get_queryset - Usuario: {user} (ID: {user.id if user else 'None'})")
+        
+        # Si es un paciente, filtrar por sus propios tratamientos
+        if hasattr(user, 'pacienteprofile'):
+            paciente_profile = user.pacienteprofile
+            queryset = Tratamiento.objects.filter(paciente=paciente_profile)
+            logger.info(f"🔍 Usuario es paciente (ID: {paciente_profile.id}), filtrando tratamientos...")
+            logger.info(f"🔍 Tratamientos encontrados para paciente: {queryset.count()}")
+            return queryset
+        
+        # Si es médico o personal médico, puede ver todos
+        logger.info(f"🔍 Usuario NO es paciente, devolviendo todos los tratamientos")
+        all_treatments = Tratamiento.objects.all()
+        logger.info(f"🔍 Total de tratamientos en sistema: {all_treatments.count()}")
+        return all_treatments
+
     def get_permissions(self):
         if self.action == 'create':
             permission_classes = [EsMedico]
         elif self.action in ['update', 'partial_update', 'destroy', 'modificar', 'cancelar']:
             permission_classes = [EsMedico]
         elif self.action in ['confirmar_toma', 'mis_tratamientos_activos', 'primera_consulta', 
-                           'cambiar_estado_alerta', 'mostrar_recordatorio', 'desactivar_recordatorio']:
+                           'cambiar_estado_alerta', 'mostrar_recordatorio', 'desactivar_recordatorio',
+                           'procesar_notificaciones', 'generar_notificaciones']:
             permission_classes = [EsPaciente]
         else:  # list, retrieve, seguimiento, historial, siguiente_alerta, notificaciones_pendientes
             permission_classes = [EsPropietarioDelTratamientoOPersonalMedico]
@@ -205,15 +232,34 @@ class TratamientoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['put'], url_path='recordatorio/(?P<recordatorio_id>\\d+)/desactivar')
     def desactivar_recordatorio(self, request, recordatorio_id=None):
         """Desactivar un recordatorio"""
-        resultado = self.service.desactivar_recordatorio(recordatorio_id)
-        
-        if not resultado:
+        try:
+            resultado = self.service.desactivar_recordatorio(recordatorio_id)
+            
+            if not resultado:
+                return Response(
+                    {'error': 'Recordatorio no encontrado'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Asegurar que la respuesta sea serializable
+            respuesta = {
+                'recordatorio_id': resultado['recordatorio_id'],
+                'mensaje': resultado['mensaje'],
+                'estado_anterior': resultado['estado_anterior'],
+                'estado_nuevo': resultado['estado_nuevo'],
+                'desactivado': resultado['desactivado']
+            }
+            
+            return Response(respuesta)
+            
+        except Exception as e:
+            # Log del error para debugging
+            logger.error(f"Error en desactivar_recordatorio: {str(e)}")
+            
             return Response(
-                {'error': 'Recordatorio no encontrado'}, 
-                status=status.HTTP_404_NOT_FOUND
+                {'error': f'Error interno: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
-        return Response(resultado)
 
     @action(detail=True, methods=['get'], url_path='notificaciones-pendientes')
     def notificaciones_pendientes(self, request, pk=None):
@@ -232,3 +278,69 @@ class TratamientoViewSet(viewsets.ModelViewSet):
         
         serializer = NotificacionesPendientesSerializer(data)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='procesar-notificaciones')
+    def procesar_notificaciones(self, request, pk=None):
+        """Procesar notificaciones pendientes para reenvío automático"""
+        try:
+            tratamiento = self.get_object()
+            notificaciones_procesadas = tratamiento.procesarNotificacionesPendientes()
+            
+            # Guardar nuevas alertas creadas
+            for notif in notificaciones_procesadas:
+                if isinstance(notif, Alerta) and not notif.pk:
+                    notif.save()
+            
+            return Response({
+                'procesadas': len(notificaciones_procesadas),
+                'mensaje': f'Se procesaron {len(notificaciones_procesadas)} notificaciones'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error procesando notificaciones: {str(e)}")
+            return Response(
+                {'error': f'Error procesando notificaciones: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'], url_path='generar-notificaciones')
+    def generar_notificaciones(self, request, pk=None):
+        """Generar notificaciones automáticamente basadas en la frecuencia del tratamiento"""
+        try:
+            tratamiento = self.get_object()
+            
+            print(f"🔧 DEBUG: Iniciando generación para tratamiento {tratamiento.id}")
+            print(f"🔧 DEBUG: Medicamentos count: {tratamiento.medicamentos.count()}")
+            print(f"🔧 DEBUG: Fecha inicio: {tratamiento.fecha_inicio}")
+            print(f"🔧 DEBUG: Tratamiento activo: {tratamiento.activo}")
+            
+            # Generar notificaciones basadas en los medicamentos del tratamiento
+            notificaciones_generadas = tratamiento.generarNotificaciones()
+            
+            print(f"🔧 DEBUG: Notificaciones generadas (total): {len(notificaciones_generadas)}")
+            
+            # Guardar las notificaciones generadas
+            alertas_creadas = 0
+            recordatorios_creados = 0
+            
+            for notificacion in notificaciones_generadas:
+                if isinstance(notificacion, Alerta):
+                    notificacion.save()
+                    alertas_creadas += 1
+                elif isinstance(notificacion, Recordatorio):
+                    notificacion.save()
+                    recordatorios_creados += 1
+            
+            return Response({
+                'generadas': len(notificaciones_generadas),
+                'alertas_creadas': alertas_creadas,
+                'recordatorios_creados': recordatorios_creados,
+                'mensaje': f'Se generaron {len(notificaciones_generadas)} notificaciones ({alertas_creadas} alertas, {recordatorios_creados} recordatorios)'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generando notificaciones: {str(e)}")
+            return Response(
+                {'error': f'Error generando notificaciones: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

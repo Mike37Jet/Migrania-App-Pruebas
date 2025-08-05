@@ -1,0 +1,37 @@
+.resultados__seccion-superior {
+    text-align: center;
+    padding-bottom: var(--spacing-m);
+    border-bottom: 1px solid var(--color-secondary-dark);
+}
+
+.resultados__tarjeta-resultados {
+    background-color: var(--color-background);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius);
+}
+
+
+.resultados__seccion-inferior {
+    padding: var(--spacing-m) 0;
+}
+
+.resultados__lista {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xxl);
+}
+
+.resultados__resultado{
+    display: flex;
+    gap: var(--spacing-m);
+    margin-bottom: var(--spacing-m);
+}
+
+.resultados__resultado span:first-child{
+    color: var(--color-secondary-dark)
+}
+.resultados__boton-inferior{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}

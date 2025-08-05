@@ -1,0 +1,178 @@
+.editar-tratamiento-container {
+    padding: var(--spacing-m);
+    background-color: var(--color-body-background);
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.editar-tratamiento-container h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 16px 0;
+    color: var(--color-text);
+}
+
+.editar-tratamiento-table-container {
+    width: 100%;
+    height: 370px;
+    overflow-y: auto;
+    background-color: var(--color-background);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: var(--spacing-m);
+}
+
+.editar-tratamiento-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.editar-tratamiento-table th,
+.editar-tratamiento-table td {
+    padding: var(--spacing-s) var(--spacing-m);
+    font-size: 0.95rem;
+    color: var(--color-text);
+    border-bottom: 1px solid #4A5A69;
+    text-align: center;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.editar-tratamiento-table tbody tr:hover {
+    background-color: transparent;
+}
+
+.editar-tratamiento-table input[type="text"],
+.editar-tratamiento-table input[type="number"] {
+    width: 100%;
+    padding: 6px;
+    border-radius: 8px;
+    border: none;
+    background-color: var(--color-text);
+    text-align: center;
+}
+
+.editar-tratamiento-botones {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.editar-tratamiento-add,
+.editar-tratamiento-remove {
+    background-color: var(--color-action);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 1rem;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.editar-tratamiento-remove {
+    background-color: var(--color-error);
+}
+
+.editar-tratamiento-recomendaciones {
+    margin-top: 16px;
+    margin-left: 16px;
+}
+
+.editar-tratamiento-recomendaciones h3 {
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.editar-tratamiento-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background-color: white;
+    padding: var(--spacing-s);
+    border-radius: var(--border-radius);
+    max-height: 170px;
+    overflow-y: auto;
+    max-width: 1000px;
+}
+
+.editar-tratamiento-lista label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    color: var(--color-text-dark);
+}
+
+.editar-tratamiento-actions {
+    display: flex;
+    margin-top: var(--spacing-m);
+    gap: 12px;
+    justify-content: center;
+}
+
+.editar-tratamiento-enviar {
+    background-color: var(--color-action);
+    color: white;
+    padding: 12px 24px;
+    width: 300px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.editar-tratamiento-cancelar {
+    background-color: var(--color-error);
+    color: white;
+    padding: 12px 24px;
+    width: 300px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal-content {
+    background-color: var(--color-background);
+    padding: 24px 32px;
+    border-radius: var(--border-radius);
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h2 {
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+    color: var(--color-text);
+}
+
+.modal-content button {
+    background-color: var(--color-action);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.modal-content button:hover {
+    background-color: #2E7474;
+}

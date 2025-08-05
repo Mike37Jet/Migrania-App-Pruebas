@@ -1,0 +1,180 @@
+body {
+    overflow: hidden;
+}
+header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: var(--color-text);
+    border-radius: 13px;
+    height: 50px;
+}
+
+header .user-info {
+    display: flex;
+    align-items: center;
+}
+
+header .user-icon {
+    font-size: 2rem;
+}
+
+header .user-name {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-left: 10px;
+    color: var(--color-text-dark);
+}
+
+.history-button {
+    background-color: var(--color-action);
+    color: var(--color-text);
+    padding: 8px 20px;
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    margin-left: auto;
+    display: block;
+    width: 200px;
+}
+
+.history-button:hover {
+    background-color: #2E7474;
+}
+
+.container {
+    padding: var(--spacing-m);
+    background-color: var(--color-body-background);
+    border-radius: var(--border-radius);
+}
+
+.patient-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-l);
+}
+
+.patient-info h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.table-and-actions-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: var(--spacing-l);
+}
+.table-container {
+    width: 100%;
+    height: 350px;
+    overflow-y: auto;
+    background-color: var(--color-background);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: var(--spacing-m);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table th, table td {
+    padding: var(--spacing-s) var(--spacing-m);
+    font-size: 1rem;
+    color: var(--color-text);
+    border-bottom: 1px solid #4A5A69;
+    text-align: center;
+    white-space: nowrap;
+}
+
+table th {
+    font-weight: 600;
+    color: var(--color-text);
+    background-color: var(--color-background);
+}
+
+table tbody tr:hover {
+    background-color: transparent;
+}
+
+button {
+    padding: var(--spacing-s) var(--spacing-m);
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    justify-content: center;
+    color: var(--color-text);
+}
+
+button.create-treatment {
+    background-color: var(--color-action);
+    width: 300px;
+}
+
+button.create-treatment:hover {
+    background-color: #2E7474;
+}
+
+button.cancel {
+    background-color: var(--color-error);
+    width: 300px;
+}
+
+button.cancel:hover {
+    background-color: #D94A50;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    width: 300px;
+}
+
+.modal-buttons {
+    margin-top: 20px;
+}
+
+.button-confirm, .button-cancel {
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 5px;
+    border: none;
+}
+
+.button-confirm {
+    background-color: var(--color-error);
+    color: white;
+}
+
+.button-cancel {
+    background-color: var(--color-action);
+    color: white;
+}

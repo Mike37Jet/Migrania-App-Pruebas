@@ -1,0 +1,30 @@
+.modal__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal__contenedor {
+    background-color: var(--color-background);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius);
+    width: 500px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modal__titulo {
+    margin-bottom: var(--spacing-md);
+}
+
+.modal__mensaje {
+    margin-bottom: var(--spacing-lg);
+}

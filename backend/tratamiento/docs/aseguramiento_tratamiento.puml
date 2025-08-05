@@ -1,0 +1,107 @@
+@startuml
+enum EstadoNotificacion {
+    ACTIVO
+    SIN_CONFIRMAR
+    CONFIRMADO_TOMADO
+    CONFIRMADO_NO_TOMADO
+    CONFIRMADO_TOMADO_TARDE
+}
+
+
+class Paciente {
+    - nombre : String
+    - identificacion : String
+    - tratamiento : Tratamiento
+    + asignarTratamiento(tratamiento : Tratamiento)
+    + estaTratamientoActivo() : boolean
+}
+
+class Tratamiento {
+    - medicamentos : List<Medicamento>
+    - recomendaciones : List<Recomendacion>
+    + generarNotificaciones()
+    + confirmarToma(Notificacion, estado: NotificacionEstado)
+    + calcularDuración()
+    + obtenerSiguienteNotificacion()
+}
+
+class Medicamento {
+    - horaDeInicio: String
+    - nombre : String
+    - dosis : String
+    - frecuencias : List<LocalTime>
+    - duracionDias : int
+    + calcularFechaDeToma(numeroDosis : int)
+}
+
+
+class BicolaNotificacion {
+    - elementos : LinkedList<Notificacion>
+    + agregarFrente(elemento) : void
+    + agregarFinal(elemento) : void
+    + eliminarFrente()
+    + eliminarFinal()
+    + verFrente()
+    + verFinal()
+    + estaVacia() : boolean
+}
+
+
+enum Recomendacion {
+    HIDRATACION
+    EJERCICIO_SUAVE
+    DIARIO_DE_DOLOR
+    MEDITACION
+
+}
+
+abstract class Notificacion {
+    - mensaje : String
+    - fechaHora : LocalDateTime
+    - estado : EstadoNotificacion
+    + enviar()
+    + obtenerEstado() : EstadoNotificacion
+    + asignarEstado(estado : EstadoNotificacion)
+    + esHoraDeEnvio(ahora : LocalDateTime) : boolean
+    + actualizarEstadoSegunTiempo(ahora : LocalDateTime)
+}
+
+
+class Alerta {
+    - numeroAlerta: Integer
+    - duracion: Integer
+    - tiempoEspera: Integer
+    + enviar()
+    + reenviar()
+    + obtenerEstado() : EstadoNotificacion
+    + asignarEstado(estado : EstadoNotificacion)
+    + esHoraDeEnvio(ahora : LocalDateTime) : boolean
+    + actualizarEstadoSegunTiempo(ahora : LocalDateTime)
+    + haExcedioHoraDeConfirmacion()
+
+}
+
+class Recordatorio {
+
+    + enviar()
+    + obtenerEstado() : EstadoNotificacion
+    + asignarEstado(estado : EstadoNotificacion)
+    + esHoraDeEnvio(ahora : LocalDateTime) : boolean
+    + actualizarEstadoSegunTiempo(ahora : LocalDateTime)
+}
+
+
+' Relaciones
+Paciente --> Tratamiento
+Tratamiento --o Medicamento
+Tratamiento --o Recomendacion
+
+
+Notificacion --> EstadoNotificacion
+
+Tratamiento --> BicolaNotificacion
+BicolaNotificacion --> Notificacion
+Notificacion <|-- Alerta
+Notificacion <|-- Recordatorio
+
+@enduml

@@ -1,0 +1,34 @@
+[MASTER]
+# Cargar plugins específicos para Django
+load-plugins=pylint_django
+
+# Archivos o directorios a ignorar
+ignore=migrations,venv,.venv,node_modules
+
+[MESSAGES CONTROL]
+# Deshabilitar algunos warnings comunes en Django
+disable=C0114,  # missing-module-docstring
+        C0115,  # missing-class-docstring
+        C0116,  # missing-function-docstring
+        R0903,  # too-few-public-methods
+        W0613,  # unused-argument
+        C0415,  # import-outside-toplevel
+
+[FORMAT]
+# Máximo número de caracteres por línea
+max-line-length=120
+
+[VARIABLES]
+# Nombres de argumentos ignorados
+ignored-argument-names=args|kwargs|_|request
+
+[TYPECHECK]
+# Miembros generados dinámicamente (como objects en Django)
+generated-members=objects
+
+[DESIGN]
+# Máximo número de argumentos en funciones
+max-args=10
+
+# Máximo número de atributos en clases
+max-attributes=15

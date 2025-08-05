@@ -1,0 +1,24 @@
+# Información del proyecto - PERSONALIZAR PARA TU PROYECTO
+sonar.projectKey=tu-proyecto-django
+sonar.projectName=Tu Proyecto Django
+sonar.projectVersion=1.0
+
+# Configuración de archivos fuente
+sonar.sources=.
+sonar.exclusions=**/migrations/**,**/venv/**,**/env/**,**/static/**,**/media/**,**/node_modules/**,**/__pycache__/**,**/htmlcov/**
+
+# Configuración de Python
+sonar.python.coverage.reportPaths=coverage.xml
+sonar.python.xunit.reportPath=test-results.xml
+
+# Configuración del host (por defecto)
+sonar.host.url=http://localhost:9000
+
+# Encoding
+sonar.sourceEncoding=UTF-8
+
+# INSTRUCCIONES:
+# 1. Copia este archivo como "sonar-project.properties"
+# 2. Cambia "tu-proyecto-django" por el nombre de tu proyecto
+# 3. Ajusta sonar.projectName con el nombre que quieras mostrar
+# 4. Opcionalmente modifica la versión

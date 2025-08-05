@@ -1,0 +1,19 @@
+.midas_tabla-resultados td:first-child, .midas_tabla-resultados th:first-child  {
+  text-align: left !important;
+}
+
+.midas_tabla-resultados td, .midas_tabla-resultados th{
+  text-align: right !important;
+}
+
+.midas_tabla-resultados *{
+    background-color: #33414d;
+}
+
+.midas_tabla-resultados{
+    background-color: #33414d;
+}
+
+.midas_tabla-resultados td {
+    color: var(--color-secondary-dark) !important;
+}

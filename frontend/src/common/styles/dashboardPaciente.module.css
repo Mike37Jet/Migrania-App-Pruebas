@@ -1,0 +1,305 @@
+.dashboard__cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.dashboard__contenedor-tarjetas {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--spacing-m);
+}
+
+.dashboard__tarjeta {
+    display: flex;
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--color-background);
+    padding: var(--spacing-m);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-border);
+    transition: all 0.3s ease;
+}
+
+.dashboard__tarjeta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard__tarjeta>p {
+    color: var(--color-secondary-dark);
+}
+
+.dashboard__icono {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: var(--border-radius);
+    width: 50px;
+    height: 50px;
+    margin-bottom: var(--spacing-s);
+}
+
+.dashboard__episodios-recientes {
+    padding: var(--spacing-m);
+    background-color: var(--color-background);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.dashboard__episodios-recientes h4 {
+    margin-bottom: var(--spacing-s);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--spacing-xs);
+}
+
+.dashboard__seccion-inferior {
+    margin-top: var(--spacing-l);
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: var(--spacing-m);
+    align-items: stretch;
+}
+
+.dashboard__mi-medico {
+    padding: var(--spacing-m);
+    background-color: var(--color-background);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-l);
+}
+
+.dashboard__medico-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.dashboard__medico-info img {
+    border-radius: 50%;
+    margin-bottom: var(--spacing-s);
+}
+
+.dashboard__medico-info p {
+    color: var(--color-secondary-dark);
+}
+
+.dashboard__medico-info svg {
+    margin-bottom: var(--spacing-m);
+}
+
+/* Estilos para episodios recientes */
+.dashboard__lista-episodios {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-s);
+    margin-top: var(--spacing-s);
+    flex: 1;
+    overflow-y: auto;
+}
+
+.dashboard__episodio-item {
+    display: flex;
+    align-items: stretch;
+    padding: 0;
+    background: var(--color-background);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-border);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    min-height: 90px;
+}
+
+.dashboard__episodio-item:hover {
+    background-color: var(--color-background-hover);
+    border-color: var(--color-action);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard__episodio-fecha {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    max-width: 80px;
+    padding: var(--spacing-m);
+    background: var(--color-action);
+    color: white;
+    text-align: center;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+}
+
+.dashboard__episodio-contenido {
+    flex: 1;
+    padding: var(--spacing-m);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--spacing-xs);
+    min-width: 0;
+}
+
+.dashboard__episodio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.dashboard__episodio-severidad {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: capitalize;
+}
+
+.dashboard__episodio-severidad::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dashboard__episodio-detalles {
+    display: flex;
+    gap: var(--spacing-m);
+    flex-wrap: wrap;
+}
+
+.dashboard__episodio-detalle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--color-secondary-dark);
+    white-space: nowrap;
+}
+
+.dashboard__episodio-detalle-icono {
+    width: 12px;
+    height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.dashboard__episodio-detalle-texto {
+    font-weight: var(--font-weight-normal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 80px;
+}
+
+/* Colores específicos para severidad */
+.dashboard__episodio-severidad--leve {
+    background: rgba(3, 166, 166, 0.2);
+    color: var(--color-action);
+}
+
+.dashboard__episodio-severidad--leve::before {
+    background: var(--color-action);
+}
+
+.dashboard__episodio-severidad--moderada {
+    background: rgba(210, 217, 184, 0.3);
+    color: #8b8b00;
+}
+
+.dashboard__episodio-severidad--moderada::before {
+    background: #8b8b00;
+}
+
+.dashboard__episodio-severidad--severa {
+    background: rgba(170, 77, 83, 0.3);
+    color: var(--color-error);
+}
+
+.dashboard__episodio-severidad--severa::before {
+    background: var(--color-error);
+}
+
+/* Mejora visual para cuando no hay episodios */
+.dashboard__episodios-recientes div[style*="text-align: center"] {
+    padding: var(--spacing-l) var(--spacing-m);
+    background: var(--color-background);
+    border-radius: var(--border-radius);
+    border: 2px dashed var(--color-border);
+    margin-top: var(--spacing-s);
+    text-align: center;
+    color: var(--color-secondary-dark);
+    font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .dashboard__contenedor-tarjetas {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard__contenedor-tarjetas {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-s);
+    }
+
+    .dashboard__seccion-inferior {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-s);
+    }
+
+    .dashboard__episodio-fecha {
+        min-width: 50px;
+        max-width: 50px;
+        padding: var(--spacing-xs);
+        font-size: 10px;
+    }
+
+    .dashboard__episodio-contenido {
+        padding: var(--spacing-xs) var(--spacing-s);
+    }
+
+    .dashboard__episodio-detalles {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .dashboard__episodio-detalle-texto {
+        max-width: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard__cabecera {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-s);
+    }
+
+    .dashboard__episodio-item {
+        max-height: none;
+        min-height: 60px;
+    }
+}

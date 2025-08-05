@@ -1,0 +1,76 @@
+.inputDefault {
+    flex: 0 0 60%;
+    padding: var(--spacing-s);
+    border-radius: var(--border-radius);
+    border: none;
+    background-color: #fff;
+    font-family: var(--font-main);
+    outline: none;
+    font-size: var(--font-size-s);
+    /* color: var(--color-background); */
+    min-height: 40px;
+}
+
+.inputDefault::placeholder {
+    color: #888888;
+}
+
+.selectDefault {
+    flex: 0 0 60%;
+    padding: var(--spacing-s);
+    border-radius: var(--border-radius);
+    border: none;
+    background-color: #fff;
+    font-family: var(--font-main);
+    outline: none;
+    font-size: var(--font-size-s);
+    min-height: 40px;
+    cursor: pointer;
+}
+
+.selectDefault:invalid,
+.selectPlaceholder {
+    color: #888888;
+}
+
+
+.labelStyled {
+    display: inline-block;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    padding: var(--spacing-xs) var(--spacing-s);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-m);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 0;
+    white-space: nowrap;
+    flex: 0 0 40%;
+    text-align: right;
+}
+
+.formGrid {
+    display: grid;
+    gap: var(--spacing-m);
+    padding: 0 8rem 0 0;
+}
+
+
+.btnPrimary {
+    background-color: var(--color-action);
+    padding: 1rem;
+    font-size: var(--font-size-l);
+}
+
+.btnPrimary:hover {
+    background-color: var(--color-action-hover);
+}
+
+.btnSecondary {
+    background-color: var(--secondary-light);
+    color: var(--color-background);
+}
+
+.btnCancel {
+    background-color: var(--color-error);
+    font-size: var(--font-size-l);
+}

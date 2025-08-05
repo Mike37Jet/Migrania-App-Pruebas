@@ -8,3 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+# Coverage reports
+coverage.xml
+htmlcov/
+.coverage
+test-results.xml
+# SonarQube
+.sonar/
+.scannerwork/
+sonar-project.properties  # Archivo personalizado (usar el .example)
+# Docker volumes (SonarQube data)
+sonarqube_*

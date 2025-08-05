@@ -1,0 +1,30 @@
+.button-confirm {
+    background-color: var(--color-action) !important;
+    color: white !important;
+}
+
+.button-cancel {
+    background-color: var(--color-error) !important;
+    color: white !important;
+}
+
+.filter-section {
+    margin: 20px 0;
+    width: 100%;
+}
+
+.filter-label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+.filter-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: white;
+}

@@ -1,0 +1,107 @@
+.tratamientos {
+    padding: var(--spacing-m);
+    background-color: var(--color-body-background);
+    border-radius: var(--border-radius);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.tratamientos .table-container {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.tratamientos table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tratamientos table th:nth-child(1),
+.tratamientos table td:nth-child(1) { width: 15%; }
+
+.tratamientos table th:nth-child(2),
+.tratamientos table td:nth-child(2) { width: 10%; }
+
+.tratamientos table th:nth-child(3),
+.tratamientos table td:nth-child(3) { width: 15%; }
+
+.tratamientos table th:nth-child(4),
+.tratamientos table td:nth-child(4) { width: 10%; }
+
+.tratamientos table th:nth-child(5),
+.tratamientos table td:nth-child(5) { width: 20%; }
+
+.tratamientos table th:nth-child(6),
+.tratamientos table td:nth-child(6) { width: 30%; }
+
+.tratamientos th,
+.tratamientos td {
+    padding: var(--spacing-s);
+    text-align: center;
+    vertical-align: middle;
+}
+
+.tratamientos td.acciones {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    height: 100%;
+    width: 100%;
+    margin-left: 100px;
+}
+
+.tratamientos .edit-button,
+.tratamientos .delete-button {
+    background-color: transparent;
+    border: none;
+    color: inherit;
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    padding: 6px 10px;
+}
+
+.tratamientos .edit-button {
+    color: var(--color-action);
+}
+
+.tratamientos .delete-button {
+    color: var(--color-error);
+}
+
+/* Botones generales de acción */
+.tratamientos .actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: var(--spacing-m);
+}
+
+.tratamientos .create-treatment {
+    background-color: var(--color-action);
+    color: white;
+    padding: 12px 24px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 1rem;
+    width: 300px;
+}
+
+.tratamientos .cancel {
+    background-color: var(--color-error);
+    color: white;
+    padding: 12px 24px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 1rem;
+    width: 300px;
+}

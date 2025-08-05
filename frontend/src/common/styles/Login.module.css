@@ -1,0 +1,107 @@
+.login {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+
+    background-color: var(--color-body-background); 
+    padding: var(--spacing-m);
+}
+
+.login__tarjeta{
+    width: 100%;
+    max-width: 500px; 
+    background-color: var(--color-background); 
+    padding: var(--spacing-xxl); 
+    border-radius: var(--border-radius); 
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-l);
+}
+
+.login__titulo  {
+    font-size: 48px; 
+    font-weight: var(--font-weight-bold);
+    text-align: center;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-m);
+}
+
+.login__formulario{
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-l); 
+}
+
+.login__grupo-input {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-s); 
+}
+
+.login__grupo-input label {
+    color: var(--color-text);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-normal);
+}
+
+.login__boton {
+    background-color: var(--color-action);
+    color: var(--color-text);
+    padding: var(--spacing-m);
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+    font-size: var(--font-size-s);
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+    transition: background-color 0.2s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none; 
+}
+
+.login__boton :hover {
+    background-color: var(--color-action-hover);
+}
+
+.login__mensaje-error{
+    color: var(--color-error);
+    background-color: rgba(170, 77, 83, 0.1);
+    border: 1px solid var(--color-error);
+    padding: var(--spacing-s);
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-size: var(--font-size-xs);
+}
+
+
+.login__contenedor-password {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.login__contenedor-password input {
+    padding-right: 45px;
+}
+
+.login__contenedor-password input::-ms-reveal,
+.login__contenedor-password input::-webkit-password-reveal-button {
+  display: none;
+}
+
+.login__icono-password {
+    position: absolute;
+    right: 15px;
+    cursor: pointer;
+    color: #888; 
+    display: flex;
+    align-items: center;
+    transition: color 0.2s; 
+}
+
+.login__icono-password:hover {
+    color: #282828; 
+}

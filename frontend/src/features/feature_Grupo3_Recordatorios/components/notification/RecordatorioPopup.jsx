@@ -7,7 +7,8 @@ const RecordatorioPopup = ({
   isOpen, 
   onClose,
   type,
-  message,
+  mensaje, // mensaje del recordatorio
+  fecha_hora, // fecha_hora del recordatorio
   recordatorioId = null,
   modoSonido = "sonido"
 }) => {
@@ -42,24 +43,32 @@ const RecordatorioPopup = ({
   }, [isOpen, modoSonido]);
   if (!isOpen) return null;
 
-  // Configuración según el tipo
-  const getConfig = () => {
-    switch (type) {
-      case "recomendacion":
-        return {
-          title: "Recuerda seguir las recomendaciones",
-          icon: <InfoIcon size={64} color="var(--secondary-light)" weight="fill" />
-        };
-      case "medicina":
-      default:
-        return {
-          title: "Es hora de prepararte para tu medicación",
-          icon: <LightbulbFilamentIcon size={64} color="var(--secondary-light)" weight="fill" />
-        };
-    }
-  };
+  // Determinar tipo de recordatorio (medicamento o recomendación)
+  let esMedicamento = false;
+  if (type === 'medicina' || (mensaje && /toma|tomar|medic/i.test(mensaje))) {
+    esMedicamento = true;
+  }
 
-  const config = getConfig();
+  // Calcular minutos hasta la hora programada si es de medicamento
+  let minutosRestantes = null;
+  if (esMedicamento && fecha_hora) {
+    try {
+      const ahora = new Date();
+      const fecha = new Date(fecha_hora);
+      const diffMs = fecha - ahora;
+      minutosRestantes = Math.round(diffMs / 60000);
+    } catch (e) {
+      minutosRestantes = null;
+    }
+  }
+
+  // Icono y título según tipo
+  const icono = esMedicamento
+    ? <LightbulbFilamentIcon size={64} color="var(--secondary-light)" weight="fill" />
+    : <InfoIcon size={64} color="var(--secondary-light)" weight="fill" />;
+  const titulo = esMedicamento
+    ? "Es hora de prepararte para tu medicación"
+    : "Recuerda seguir las recomendaciones";
 
   return (
     <div className={styles.overlay}>
@@ -72,14 +81,19 @@ const RecordatorioPopup = ({
         >
           <X size={24} color="var(--color-text)" weight="bold" />
         </button>
-        
         <div>
-          {config.icon}
+          {icono}
         </div>
-        
         <div className={styles.content}>
-          <h3 className={styles.title}>{config.title}</h3>
-          <p className={styles.message}>{message}</p>
+          <h3 className={styles.title}>{titulo}</h3>
+          <p className={styles.message}>
+            {mensaje}
+            {esMedicamento && typeof minutosRestantes === 'number' && minutosRestantes > 0 && (
+              <span style={{ display: 'block', color: 'var(--color-secondary-dark)', fontWeight: 'bold', marginTop: 6 }}>
+                dentro de {minutosRestantes} minuto{minutosRestantes === 1 ? '' : 's'}
+              </span>
+            )}
+          </p>
         </div>
       </div>
     </div>

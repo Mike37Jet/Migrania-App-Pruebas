@@ -6,142 +6,32 @@ const useDetectorNotificacionesEmergentes = () => {
   const [recordatorioActual, setRecordatorioActual] = useState(null);
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
   const [mostrarRecordatorio, setMostrarRecordatorio] = useState(false);
+  // Array de notificaciones mostradas (solo frontend)
+  const [notificacionesMostradas, setNotificacionesMostradas] = useState([]);
   
   // Referencias para evitar duplicados
   const alertasProcessadasRef = useRef(new Set());
   const recordatoriosProcessadosRef = useRef(new Set());
   const intervalosActivosRef = useRef(new Map());
   
-  // Función para procesar automáticamente las notificaciones (reenvíos)
-  const procesarNotificacionesAutomaticamente = async () => {
-    try {
-      console.log('🔧 Obteniendo tratamientos activos para procesamiento...');
-      const tratamientosActivos = await NotificacionesService.obtenerTratamientosActivos();
-      
-      if (!tratamientosActivos || tratamientosActivos.length === 0) {
-        console.log('⚠️ No hay tratamientos activos para procesar');
-        return;
-      }
+  // Ya no se procesan notificaciones automáticamente en el frontend.
+  // El frontend solo consulta las alertas y recordatorios pendientes por paciente y decide mostrar popups según la hora programada.
 
-      console.log(`🎯 Procesando ${tratamientosActivos.length} tratamientos activos...`);
-      
-      for (const tratamiento of tratamientosActivos) {
-        try {
-          console.log(`🔄 Procesando notificaciones para tratamiento ID: ${tratamiento.id}`);
-          
-          // Primer intento: procesar notificaciones existentes
-          const resultado = await NotificacionesService.procesarNotificaciones(tratamiento.id);
-          console.log(`✅ Tratamiento ${tratamiento.id} procesado:`, resultado);
-          
-          // Si no se procesaron notificaciones, intentar generar nuevas
-          if (resultado.procesadas === 0) {
-            try {
-              console.log(`🏭 No hay notificaciones para procesar, intentando generar automáticamente...`);
-              const generadas = await NotificacionesService.generarNotificacionesAutomaticas(tratamiento.id);
-              console.log(`🎉 Notificaciones generadas para tratamiento ${tratamiento.id}:`, generadas);
-              
-              // Procesar las notificaciones recién generadas
-              const resultadoFinal = await NotificacionesService.procesarNotificaciones(tratamiento.id);
-              console.log(`✅ Notificaciones recién generadas procesadas:`, resultadoFinal);
-            } catch (generarError) {
-              console.warn(`⚠️ No se pudieron generar notificaciones automáticas para tratamiento ${tratamiento.id}:`, generarError.message);
-            }
-          }
-          
-        } catch (error) {
-          console.error(`❌ Error procesando tratamiento ${tratamiento.id}:`, error);
-          // Continuar con el siguiente tratamiento
-        }
-      }
-      
-      console.log('🎉 Procesamiento automático completado');
-    } catch (error) {
-      console.error('💥 Error fatal en procesamiento automático:', error);
-      throw error; // Re-lanzar para que se maneje en el nivel superior
-    }
-  };
-
-  // Función para obtener notificaciones pendientes
+  // Función para obtener alertas y recordatorios pendientes por paciente
+  // El frontend debe filtrar por hora programada (fecha_hora) para decidir si mostrar popup
   const obtenerNotificaciones = async () => {
     try {
-      const tratamientosActivos = await NotificacionesService.obtenerTratamientosActivos();
-      
-      if (!tratamientosActivos || tratamientosActivos.length === 0) {
+      const pacienteId = await NotificacionesService.obtenerPacienteId();
+      if (!pacienteId) {
+        console.warn('No se pudo obtener pacienteId, omitiendo consulta de notificaciones');
         return { alertas: [], recordatorios: [] };
       }
-
-      let todasLasAlertas = [];
-      let todosLosRecordatorios = [];
-
-      // REHABILITANDO: Procesar notificaciones automáticamente antes de obtenerlas
-      console.log('🔄 Iniciando procesamiento automático de notificaciones...');
-      try {
-        await procesarNotificacionesAutomaticamente();
-        console.log('✅ Procesamiento automático completado exitosamente');
-      } catch (error) {
-        console.error('❌ Error en procesamiento automático:', error);
-        console.log('📝 Detalles del error:', {
-          message: error.message,
-          stack: error.stack,
-          type: error.constructor.name
-        });
-        console.log('⏸️ Continuando sin procesamiento automático...');
-      }
-
-      for (const tratamiento of tratamientosActivos) {
-        try {
-          console.log(`🔍 Buscando notificaciones para tratamiento ID: ${tratamiento.id}`);
-          const notificaciones = await NotificacionesService.obtenerNotificacionesPendientes(tratamiento.id);
-          console.log(`📥 Notificaciones encontradas para tratamiento ${tratamiento.id}:`, notificaciones);
-          
-          if (notificaciones && notificaciones.alertas) {
-            console.log(`🚨 Alertas encontradas: ${notificaciones.alertas.length}`);
-            // Log detallado de cada alerta
-            notificaciones.alertas.forEach((alerta, index) => {
-              console.log(`🚨 Alerta ${index + 1}:`, {
-                id: alerta.id,
-                estado: alerta.estado,
-                fecha_hora: alerta.fecha_hora,
-                tipo: alerta.tipo || 'N/A'
-              });
-            });
-            todasLasAlertas = [...todasLasAlertas, ...notificaciones.alertas];
-          }
-          
-          if (notificaciones && notificaciones.recordatorios) {
-            console.log(`📝 Recordatorios encontrados: ${notificaciones.recordatorios.length}`);
-            // Log detallado de cada recordatorio
-            notificaciones.recordatorios.forEach((recordatorio, index) => {
-              console.log(`📝 Recordatorio ${index + 1}:`, {
-                id: recordatorio.id,
-                estado: recordatorio.estado,
-                fecha_hora: recordatorio.fecha_hora,
-                tipo: recordatorio.tipo || 'N/A'
-              });
-            });
-            todosLosRecordatorios = [...todosLosRecordatorios, ...notificaciones.recordatorios];
-          }
-        } catch (error) {
-          console.warn(`Error obteniendo notificaciones para tratamiento ${tratamiento.id}:`, error);
-        }
-      }
-
-      console.log(`📊 RESUMEN FINAL - Alertas: ${todasLasAlertas.length}, Recordatorios: ${todosLosRecordatorios.length}`);
-      
-      // Log adicional para debugging
-      console.log(`🔍 DETALLE DE NOTIFICACIONES FINALES:`);
-      todasLasAlertas.forEach((alerta, index) => {
-        console.log(`  🚨 Alerta ${index + 1}: ID=${alerta.id}, estado='${alerta.estado}'`);
-      });
-      todosLosRecordatorios.forEach((recordatorio, index) => {
-        console.log(`  📝 Recordatorio ${index + 1}: ID=${recordatorio.id}, estado='${recordatorio.estado}'`);
-      });
-
-      return {
-        alertas: todasLasAlertas,
-        recordatorios: todosLosRecordatorios
-      };
-
+      // Llamar a los endpoints nuevos por paciente
+      const [alertas, recordatorios] = await Promise.all([
+        NotificacionesService.obtenerAlertasPorPaciente(pacienteId),
+        NotificacionesService.obtenerRecordatoriosPorPaciente(pacienteId)
+      ]);
+      return { alertas, recordatorios };
     } catch (error) {
       console.error('Error obteniendo notificaciones:', error);
       return { alertas: [], recordatorios: [] };
@@ -161,7 +51,16 @@ const useDetectorNotificacionesEmergentes = () => {
 
     console.log(`✅ Alerta nueva, procesando: ${alertaKey}`);
     alertasProcessadasRef.current.add(alertaKey);
-    
+
+    // Agregar alerta a notificaciones mostradas (si no existe ya)
+    setNotificacionesMostradas(prev => {
+      const existe = prev.some(n => n.id === alerta.id && n.fecha_hora === alerta.fecha_hora);
+      if (!existe) {
+        return [...prev, { ...alerta, tipo: alerta.tipo || 'alerta' }];
+      }
+      return prev;
+    });
+
     setAlertaActual(alerta);
     setMostrarAlerta(true);
     console.log(`🚨 POPUP DE ALERTA ACTIVADO - mostrarAlerta=true`);
@@ -189,7 +88,16 @@ const useDetectorNotificacionesEmergentes = () => {
 
     console.log(`✅ Recordatorio nuevo, procesando: ${recordatorioKey}`);
     recordatoriosProcessadosRef.current.add(recordatorioKey);
-    
+
+    // Agregar recordatorio a notificaciones mostradas (si no existe ya)
+    setNotificacionesMostradas(prev => {
+      const existe = prev.some(n => n.id === recordatorio.id && n.fecha_hora === recordatorio.fecha_hora);
+      if (!existe) {
+        return [...prev, { ...recordatorio, tipo: recordatorio.tipo || 'recordatorio' }];
+      }
+      return prev;
+    });
+
     setRecordatorioActual(recordatorio);
     setMostrarRecordatorio(true);
     console.log(`📝 POPUP DE RECORDATORIO ACTIVADO - mostrarRecordatorio=true`);
@@ -295,10 +203,53 @@ const useDetectorNotificacionesEmergentes = () => {
       // Procesar recordatorios primero
       for (const recordatorio of recordatorios) {
         console.log(`📝 Evaluando recordatorio ID ${recordatorio.id}, estado: ${recordatorio.estado}`);
-        if (recordatorio.estado === 'activo' || recordatorio.estado === 'ACTIVO') {
-          console.log(`✅ Mostrando recordatorio ID ${recordatorio.id}`);
-          await mostrarRecordatorioPopup(recordatorio);
+        if ((recordatorio.estado === 'activo' || recordatorio.estado === 'ACTIVO') && recordatorio.fecha_hora) {
+          // Comparar usando hora local del usuario
+          const ahoraLocal = new Date();
+          const fechaRecordatorioLocal = new Date(recordatorio.fecha_hora);
+          console.log(`⏰ [RECORDATORIO] Comparando hora LOCAL: fechaRecordatorio=${fechaRecordatorioLocal.toLocaleString()} <= ahora=${ahoraLocal.toLocaleString()} ?`, fechaRecordatorioLocal <= ahoraLocal);
+          if (fechaRecordatorioLocal <= ahoraLocal) {
+            // Mostrar popup solo si está en la hora, pero siempre guardar en la lista del modal
+            setNotificacionesMostradas(prev => {
+              const existe = prev.some(n => n.id === recordatorio.id && n.fecha_hora === recordatorio.fecha_hora);
+              if (!existe) {
+                return [...prev, { ...recordatorio, tipo: recordatorio.tipo || 'recordatorio' }];
+              }
+              return prev;
+            });
+            console.log(`✅ Mostrando recordatorio ID ${recordatorio.id}`);
+            await mostrarRecordatorioPopup(recordatorio);
+          } else {
+            // Si la fecha ya pasó pero no está activa, igual guardar en la lista del modal
+            const ahoraLocal = new Date();
+            console.log(`⏰ [RECORDATORIO] Comparando hora LOCAL (no activo): fechaRecordatorio=${fechaRecordatorioLocal.toLocaleString()} < ahora=${ahoraLocal.toLocaleString()} ?`, fechaRecordatorioLocal < ahoraLocal);
+            if (fechaRecordatorioLocal < ahoraLocal) {
+              setNotificacionesMostradas(prev => {
+                const existe = prev.some(n => n.id === recordatorio.id && n.fecha_hora === recordatorio.fecha_hora);
+                if (!existe) {
+                  return [...prev, { ...recordatorio, tipo: recordatorio.tipo || 'recordatorio' }];
+                }
+                return prev;
+              });
+            }
+            console.log(`⏭️ Recordatorio ID ${recordatorio.id} omitido por hora futura: ${recordatorio.fecha_hora}`);
+          }
         } else {
+          // Si la fecha ya pasó pero el estado no es activo, igual guardar en la lista del modal
+          if (recordatorio.fecha_hora) {
+            const ahoraLocal = new Date();
+            const fechaRecordatorioLocal = new Date(recordatorio.fecha_hora);
+            console.log(`⏰ [RECORDATORIO] Comparando hora LOCAL (no activo, else): fechaRecordatorio=${fechaRecordatorioLocal.toLocaleString()} < ahora=${ahoraLocal.toLocaleString()} ?`, fechaRecordatorioLocal < ahoraLocal);
+            if (fechaRecordatorioLocal < ahoraLocal) {
+              setNotificacionesMostradas(prev => {
+                const existe = prev.some(n => n.id === recordatorio.id && n.fecha_hora === recordatorio.fecha_hora);
+                if (!existe) {
+                  return [...prev, { ...recordatorio, tipo: recordatorio.tipo || 'recordatorio' }];
+                }
+                return prev;
+              });
+            }
+          }
           console.log(`⏭️ Recordatorio ID ${recordatorio.id} omitido por estado: ${recordatorio.estado}`);
         }
       }
@@ -306,10 +257,52 @@ const useDetectorNotificacionesEmergentes = () => {
       // Procesar alertas
       for (const alerta of alertas) {
         console.log(`🚨 Evaluando alerta ID ${alerta.id}, estado: ${alerta.estado}`);
-        if (['SIN_CONFIRMAR', 'CONFIRMADO_TARDE', 'CONFIRMADO_MUY_TARDE', 'activo', 'sin_confirmar', 'confirmado_tarde', 'confirmado_muy_tarde'].includes(alerta.estado)) {
-          console.log(`✅ Mostrando alerta ID ${alerta.id}`);
-          await mostrarAlertaPopup(alerta);
+        if ((['SIN_CONFIRMAR', 'CONFIRMADO_TARDE', 'CONFIRMADO_MUY_TARDE', 'activo', 'sin_confirmar', 'confirmado_tarde', 'confirmado_muy_tarde'].includes(alerta.estado)) && alerta.fecha_hora) {
+          // Comparar usando hora local del usuario
+          const ahoraLocal = new Date();
+          const fechaAlertaLocal = new Date(alerta.fecha_hora);
+          console.log(`⏰ [ALERTA] Comparando hora LOCAL: fechaAlerta=${fechaAlertaLocal.toLocaleString()} <= ahora=${ahoraLocal.toLocaleString()} ?`, fechaAlertaLocal <= ahoraLocal);
+          if (fechaAlertaLocal <= ahoraLocal) {
+            setNotificacionesMostradas(prev => {
+              const existe = prev.some(n => n.id === alerta.id && n.fecha_hora === alerta.fecha_hora);
+              if (!existe) {
+                return [...prev, { ...alerta, tipo: alerta.tipo || 'alerta' }];
+              }
+              return prev;
+            });
+            console.log(`✅ Mostrando alerta ID ${alerta.id}`);
+            await mostrarAlertaPopup(alerta);
+          } else {
+            // Si la fecha ya pasó pero no está activa, igual guardar en la lista del modal
+            const ahoraLocal = new Date();
+            console.log(`⏰ [ALERTA] Comparando hora LOCAL (no activa): fechaAlerta=${fechaAlertaLocal.toLocaleString()} < ahora=${ahoraLocal.toLocaleString()} ?`, fechaAlertaLocal < ahoraLocal);
+            if (fechaAlertaLocal < ahoraLocal) {
+              setNotificacionesMostradas(prev => {
+                const existe = prev.some(n => n.id === alerta.id && n.fecha_hora === alerta.fecha_hora);
+                if (!existe) {
+                  return [...prev, { ...alerta, tipo: alerta.tipo || 'alerta' }];
+                }
+                return prev;
+              });
+            }
+            console.log(`⏭️ Alerta ID ${alerta.id} omitida por hora futura: ${alerta.fecha_hora}`);
+          }
         } else {
+          // Si la fecha ya pasó pero el estado no es válido, igual guardar en la lista del modal
+          if (alerta.fecha_hora) {
+            const ahoraLocal = new Date();
+            const fechaAlertaLocal = new Date(alerta.fecha_hora);
+            console.log(`⏰ [ALERTA] Comparando hora LOCAL (no activa, else): fechaAlerta=${fechaAlertaLocal.toLocaleString()} < ahora=${ahoraLocal.toLocaleString()} ?`, fechaAlertaLocal < ahoraLocal);
+            if (fechaAlertaLocal < ahoraLocal) {
+              setNotificacionesMostradas(prev => {
+                const existe = prev.some(n => n.id === alerta.id && n.fecha_hora === alerta.fecha_hora);
+                if (!existe) {
+                  return [...prev, { ...alerta, tipo: alerta.tipo || 'alerta' }];
+                }
+                return prev;
+              });
+            }
+          }
           console.log(`⏭️ Alerta ID ${alerta.id} omitida por estado: ${alerta.estado}`);
         }
       }
@@ -322,30 +315,35 @@ const useDetectorNotificacionesEmergentes = () => {
   };
 
   // Efecto principal para el polling
+  // El pacienteId debe ser proporcionado por el contexto de usuario autenticado
   useEffect(() => {
+    const pacienteId = /* obtener pacienteId del contexto de usuario autenticado */ null;
+    if (!pacienteId) return;
+
     // Verificar inmediatamente al montar
-    verificarNotificaciones();
+    verificarNotificaciones(pacienteId);
 
     // Configurar polling cada 30 segundos
     const interval = setInterval(() => {
-      verificarNotificaciones();
+      verificarNotificaciones(pacienteId);
     }, 30000);
 
     // Cleanup
     return () => {
       clearInterval(interval);
-      
       // Limpiar todos los timeouts activos
       intervalosActivosRef.current.forEach((timeoutId) => {
         clearTimeout(timeoutId);
       });
       intervalosActivosRef.current.clear();
-      
       // Limpiar sets de procesados
       alertasProcessadasRef.current.clear();
       recordatoriosProcessadosRef.current.clear();
     };
   }, []);
+
+  // Permite limpiar el array de notificaciones mostradas (para el modal)
+  const limpiarNotificacionesMostradas = () => setNotificacionesMostradas([]);
 
   return {
     alertaActual,
@@ -355,7 +353,11 @@ const useDetectorNotificacionesEmergentes = () => {
     handleConfirmarAlerta,
     handleCancelarAlerta,
     handleDesactivarRecordatorio,
-    verificarNotificaciones
+    verificarNotificaciones,
+    notificacionesMostradas,
+    limpiarNotificacionesMostradas,
+    // Documentación: ahora el frontend decide mostrar popups según la hora programada de cada alerta/recordatorio
+    // usando los endpoints /api/tratamientos/alertas-por-paciente/{paciente_id}/ y /api/tratamientos/recordatorios-por-paciente/{paciente_id}/
   };
 };
 

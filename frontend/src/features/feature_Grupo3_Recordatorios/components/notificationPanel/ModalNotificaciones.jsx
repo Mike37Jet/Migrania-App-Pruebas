@@ -26,106 +26,12 @@ const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1, notificacione
   };
 
   // Cargar notificaciones cuando se abre el modal
-  const cargarNotificaciones = useCallback(async () => {
-    setCargando(true);
+  // Ya no se consultan endpoints por tratamientoId. Si no hay notificacionesExternas, el modal queda vacío.
+  const cargarNotificaciones = useCallback(() => {
+    setCargando(false);
     setError(null);
-    
-    try {
-      // Obtener datos de diferentes endpoints
-      const [alertasData, recordatoriosData, notificacionesPendientes] = await Promise.allSettled([
-        NotificacionesService.obtenerAlertas(tratamientoId),
-        NotificacionesService.obtenerRecordatorios(tratamientoId),
-        NotificacionesService.obtenerNotificacionesPendientes(tratamientoId)
-      ]);
-
-      const todasLasNotificaciones = [];
-
-      // Procesar alertas
-      if (alertasData.status === 'fulfilled' && alertasData.value) {
-        const alertas = Array.isArray(alertasData.value) ? alertasData.value : [alertasData.value];
-        alertas.forEach(alerta => {
-          if (alerta.activa && !alerta.confirmada) {
-            const notifFormateada = NotificacionesService.formatearNotificacion(alerta, 'alerta');
-            notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
-            todasLasNotificaciones.push(notifFormateada);
-          }
-        });
-      }
-
-      // Procesar recordatorios
-      if (recordatoriosData.status === 'fulfilled' && recordatoriosData.value) {
-        const recordatorios = Array.isArray(recordatoriosData.value) ? recordatoriosData.value : [recordatoriosData.value];
-        recordatorios.forEach(recordatorio => {
-          if (recordatorio.activo) {
-            const notifFormateada = NotificacionesService.formatearNotificacion(recordatorio, 'recordatorio');
-            notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
-            todasLasNotificaciones.push(notifFormateada);
-          }
-        });
-      }
-
-      // Procesar notificaciones pendientes
-      if (notificacionesPendientes.status === 'fulfilled' && notificacionesPendientes.value) {
-        const pendientes = notificacionesPendientes.value;
-        if (pendientes.alertas) {
-          pendientes.alertas.forEach(alerta => {
-            const notifFormateada = NotificacionesService.formatearNotificacion(alerta, 'alerta');
-            notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
-            todasLasNotificaciones.push(notifFormateada);
-          });
-        }
-        if (pendientes.recordatorios) {
-          pendientes.recordatorios.forEach(recordatorio => {
-            const notifFormateada = NotificacionesService.formatearNotificacion(recordatorio, 'recordatorio');
-            notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
-            todasLasNotificaciones.push(notifFormateada);
-          });
-        }
-      }
-
-      // Si no hay notificaciones de la API, usar datos de fallback
-      if (todasLasNotificaciones.length === 0) {
-        setNotificaciones([
-          {
-            id: 'fallback-1',
-            tipo: 'medicacion',
-            titulo: 'Es hora de prepararte para tu medicación',
-            mensaje: 'Toma tu medicamento según la prescripción médica',
-            tiempo: 'Ahora',
-            icono: obtenerIcono('medicacion')
-          },
-          {
-            id: 'fallback-2',
-            tipo: 'recordatorio',
-            titulo: 'Recuerda:',
-            mensaje: 'Mantén un estilo de vida saludable',
-            tiempo: '1h',
-            icono: obtenerIcono('recordatorio')
-          }
-        ]);
-      } else {
-        setNotificaciones(todasLasNotificaciones);
-      }
-
-    } catch (error) {
-      console.error('Error cargando notificaciones:', error);
-      setError('Error al cargar las notificaciones');
-      
-      // Mostrar notificaciones de fallback en caso de error
-      setNotificaciones([
-        {
-          id: 'error-1',
-          tipo: 'alerta',
-          titulo: 'Error de conexión',
-          mensaje: 'No se pudieron cargar las notificaciones',
-          tiempo: 'Ahora',
-          icono: obtenerIcono('alerta')
-        }
-      ]);
-    } finally {
-      setCargando(false);
-    }
-  }, [tratamientoId]);
+    setNotificaciones([]);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -133,12 +39,12 @@ const ModalNotificaciones = ({ isOpen, onClose, tratamientoId = 1, notificacione
         // Usar notificaciones que vienen del Dashboard
         setNotificaciones(notificacionesExternas);
         setCargando(false);
-      } else if (tratamientoId) {
-        // Cargar notificaciones si no vienen del Dashboard
+      } else {
+        // Si no hay notificacionesExternas, el modal queda vacío
         cargarNotificaciones();
       }
     }
-  }, [isOpen, tratamientoId, cargarNotificaciones, notificacionesExternas]);
+  }, [isOpen, cargarNotificaciones, notificacionesExternas]);
 
   const handleSonido = () => setModoSonido && setModoSonido('sonido');
   const handleSilenciar = () => setModoSonido && setModoSonido('silencio');

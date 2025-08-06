@@ -2,6 +2,44 @@
 const API_BASE_URL = 'http://localhost:8000/api';
 
 export class NotificacionesService {
+  // Obtener el pacienteId usando el endpoint protegido y el token de sesión
+  static async obtenerPacienteId() {
+    try {
+      let token = localStorage.getItem('access_token') || localStorage.getItem('access') || localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No se encontró token de sesión');
+      }
+      const response = await fetch(`${API_BASE_URL}/tratamientos/mi-paciente-id/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      const data = await response.json();
+      // Se espera que el backend retorne { paciente_id: ... }
+      return data.paciente_id;
+    } catch (error) {
+      console.error('Error obteniendo pacienteId:', error);
+      return null;
+    }
+  }
+  // Obtener alertas por paciente
+  static async obtenerAlertasPorPaciente(pacienteId) {
+    const response = await fetch(`${API_BASE_URL}/tratamientos/alertas-por-paciente/${pacienteId}/`);
+    if (!response.ok) throw new Error('Error al obtener alertas por paciente');
+    return await response.json();
+  }
+
+  // Obtener recordatorios por paciente
+  static async obtenerRecordatoriosPorPaciente(pacienteId) {
+    const response = await fetch(`${API_BASE_URL}/tratamientos/recordatorios-por-paciente/${pacienteId}/`);
+    if (!response.ok) throw new Error('Error al obtener recordatorios por paciente');
+    return await response.json();
+  }
   
   // Obtener todas las notificaciones pendientes para un tratamiento
   static async obtenerNotificacionesPendientes(tratamientoId) {
@@ -64,24 +102,28 @@ export class NotificacionesService {
         return { success: true, message: 'Alerta de prueba confirmada (simulado)' };
       }
 
-      const TEMP_TOKEN_PACIENTE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MjUwODg2LCJpYXQiOjE3NTQyNDcyODYsImp0aSI6IjIzOGE2OTc5Y2EzZTRiMzE5MzI4ZTEyMDQ4ZWRmMTRkIiwidXNlcl9pZCI6IjU4In0.EQafLInInPtkzjXy9Tw0tKSVoZkJ2WcqzWnzQZvC1EA";
+      // Usar el token real del usuario autenticado
+      let token = localStorage.getItem('access_token') || localStorage.getItem('access') || localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No se encontró token de sesión');
+      }
 
       const response = await fetch(`${API_BASE_URL}/tratamientos/alerta/${alertaId}/estado/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${TEMP_TOKEN_PACIENTE}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           nuevo_estado: 'tomado',
           hora_confirmacion: new Date().toISOString()
         })
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       return data;
     } catch (error) {
@@ -245,20 +287,24 @@ export class NotificacionesService {
         return { success: true, message: 'Recordatorio de prueba desactivado (simulado)' };
       }
 
-      const TEMP_TOKEN_PACIENTE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MjUwODg2LCJpYXQiOjE3NTQyNDcyODYsImp0aSI6IjIzOGE2OTc5Y2EzZTRiMzE5MzI4ZTEyMDQ4ZWRmMTRkIiwidXNlcl9pZCI6IjU4In0.EQafLInInPtkzjXy9Tw0tKSVoZkJ2WcqzWnzQZvC1EA";
-      
+      // Usar el token real del usuario autenticado
+      let token = localStorage.getItem('access_token') || localStorage.getItem('access') || localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No se encontró token de sesión');
+      }
+
       const response = await fetch(`${API_BASE_URL}/tratamientos/recordatorio/${recordatorioId}/desactivar/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${TEMP_TOKEN_PACIENTE}`
+          'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       return data;
     } catch (error) {
@@ -301,39 +347,35 @@ export class NotificacionesService {
 
   // Formatear datos de API para el frontend
   static formatearNotificacion(item, tipo) {
-    const tiempoRelativo = this.calcularTiempoRelativo(item.fecha_creacion || item.fecha_inicio);
-    
-    switch (tipo) {
-      case 'alerta':
-        return {
-          id: item.id,
-          tipo: 'medicacion',
-          titulo: 'Es hora de prepararte para tu medicación',
-          mensaje: `${item.medicamento_nombre} - ${item.descripcion}`,
-          tiempo: tiempoRelativo,
-          activa: item.activa,
-          confirmada: item.confirmada
-        };
-      
-      case 'recordatorio':
-        return {
-          id: item.id,
-          tipo: 'recordatorio',
-          titulo: 'Recuerda:',
-          mensaje: item.descripcion,
-          tiempo: tiempoRelativo,
-          activo: item.activo
-        };
-      
-      default:
-        return {
-          id: item.id,
-          tipo: 'alerta',
-          titulo: 'Notificación',
-          mensaje: item.descripcion || 'Sin descripción',
-          tiempo: tiempoRelativo
-        };
+    // Solo mostrar notificaciones si los datos reales existen
+    if (!item || !item.id) return null;
+    const tiempoRelativo = this.calcularTiempoRelativo(item.fecha_hora || item.fecha_creacion || item.fecha_inicio);
+
+    if (tipo === 'alerta') {
+      if (!item.mensaje && !item.descripcion && !item.medicamento_nombre) return null;
+      return {
+        id: item.id,
+        tipo: 'alerta',
+        titulo: item.titulo || '',
+        mensaje: item.mensaje || item.descripcion || '',
+        tiempo: tiempoRelativo,
+        activa: item.activa,
+        confirmada: item.confirmada
+      };
     }
+    if (tipo === 'recordatorio') {
+      if (!item.mensaje && !item.descripcion) return null;
+      return {
+        id: item.id,
+        tipo: 'recordatorio',
+        titulo: item.titulo || '',
+        mensaje: item.mensaje || item.descripcion || '',
+        tiempo: tiempoRelativo,
+        activo: item.activo
+      };
+    }
+    // Si no es alerta ni recordatorio, ignorar
+    return null;
   }
 
   // Calcular tiempo relativo (ej: "2m", "1h", "3d")

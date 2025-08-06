@@ -108,90 +108,14 @@ export default function Dashboard() {
         }
     };
 
-    // Función para cargar las notificaciones completas y el contador
-    const cargarNotificaciones = async () => {
-        try {
-            // Solo usar el endpoint de notificaciones pendientes (evita llamadas duplicadas)
-            const notificacionesPendientes = await NotificacionesService.obtenerNotificacionesPendientes(tratamientoId);
-
-            const todasLasNotificaciones = [];
-            let contador = 0;
-
-            if (notificacionesPendientes && notificacionesPendientes.total > 0) {
-                // Procesar alertas
-                if (notificacionesPendientes.alertas) {
-                    notificacionesPendientes.alertas.forEach(alerta => {
-                        const notifFormateada = NotificacionesService.formatearNotificacion(alerta, 'alerta');
-                        notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
-                        todasLasNotificaciones.push(notifFormateada);
-                        contador++;
-                    });
-                }
-
-                // Procesar recordatorios
-                if (notificacionesPendientes.recordatorios) {
-                    notificacionesPendientes.recordatorios.forEach(recordatorio => {
-                        const notifFormateada = NotificacionesService.formatearNotificacion(recordatorio, 'recordatorio');
-                        notifFormateada.icono = obtenerIcono(notifFormateada.tipo);
-                        todasLasNotificaciones.push(notifFormateada);
-                        contador++;
-                    });
-                }
-            }
-
-            // Agregar conteo de notificaciones emergentes activas
-            let contadorEmergentes = 0;
-            if (alertaActiva) contadorEmergentes++;
-            if (recordatorioActivo) contadorEmergentes++;
-            contador += contadorEmergentes;
-
-            // Si no hay notificaciones de la API, usar datos de fallback
-            if (todasLasNotificaciones.length === 0 && contadorEmergentes === 0) {
-                const fallbackNotificaciones = [
-                    {
-                        id: 'fallback-1',
-                        tipo: 'medicacion',
-                        titulo: 'Es hora de prepararte para tu medicación',
-                        mensaje: 'Toma tu medicamento según la prescripción médica',
-                        tiempo: 'Ahora',
-                        icono: obtenerIcono('medicacion')
-                    },
-                    {
-                        id: 'fallback-2',
-                        tipo: 'recordatorio',
-                        titulo: 'Recuerda:',
-                        mensaje: 'Mantén un estilo de vida saludable',
-                        tiempo: '1h',
-                        icono: obtenerIcono('recordatorio')
-                    }
-                ];
-                setNotificaciones(fallbackNotificaciones);
-                contador = fallbackNotificaciones.length;
-            } else {
-                setNotificaciones(todasLasNotificaciones);
-            }
-
-            setContadorNotificaciones(contador);
-            setTieneNotificaciones(contador > 0);
-
-        } catch (error) {
-            console.error('Error cargando notificaciones:', error);
-            
-            // En caso de error, mostrar notificaciones de fallback
-            const errorNotificaciones = [
-                {
-                    id: 'error-1',
-                    tipo: 'alerta',
-                    titulo: 'Error de conexión',
-                    mensaje: 'No se pudieron cargar las notificaciones',
-                    tiempo: 'Ahora',
-                    icono: obtenerIcono('alerta')
-                }
-            ];
-            setNotificaciones(errorNotificaciones);
-            setContadorNotificaciones(1);
-            setTieneNotificaciones(true);
-        }
+    // Función para cargar el contador de notificaciones solo desde el frontend (popups mostrados)
+    const cargarNotificaciones = () => {
+        // Solo contar las notificaciones emergentes activas
+        let contadorEmergentes = 0;
+        if (alertaActiva) contadorEmergentes++;
+        if (recordatorioActivo) contadorEmergentes++;
+        setContadorNotificaciones(contadorEmergentes);
+        setTieneNotificaciones(contadorEmergentes > 0);
     };
 
     useEffect(() => {
@@ -466,16 +390,16 @@ export default function Dashboard() {
               - Tienen sus propios botones para desactivar en el backend
               - No se ven afectados por el botón "Borrar todo" del modal
             */}
+
             {modoSonido !== "suspender" && (
                 <AlertaPopup 
                     isOpen={mostrarAlerta && !!alertaActiva}
                     onConfirm={confirmarAlertaEmergente}
                     onCancel={rechazarAlertaEmergente}
-                    title={alertaActiva?.titulo || "¿Tomaste la medicación?"}
-                    message={alertaActiva?.mensaje || "Confirma si has tomado tu medicamento según lo prescrito"}
+                    mensaje={alertaActiva?.mensaje || "Confirma si has tomado tu medicamento según lo prescrito"}
+                    fecha_hora={alertaActiva?.fecha_hora || null}
                     alertaId={alertaActiva?.id}
                     modoSonido={modoSonido}
-                    horaMedicacion={alertaActiva?.hora || alertaActiva?.hora_medicacion || null}
                 />
             )}
 
@@ -484,7 +408,8 @@ export default function Dashboard() {
                     isOpen={mostrarRecordatorio && !!recordatorioActivo}
                     onClose={cerrarRecordatorioEmergente}
                     type={recordatorioActivo?.tipo || "medicina"}
-                    message={recordatorioActivo?.mensaje || "Recuerda tomar tu medicamento según las indicaciones médicas"}
+                    mensaje={recordatorioActivo?.mensaje || "Recuerda tomar tu medicamento según las indicaciones médicas"}
+                    fecha_hora={recordatorioActivo?.fecha_hora || null}
                     recordatorioId={recordatorioActivo?.id}
                     modoSonido={modoSonido}
                 />

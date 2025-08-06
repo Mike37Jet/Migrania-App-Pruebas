@@ -7,13 +7,12 @@ const AlertaPopup = ({
   isOpen, 
   onConfirm, 
   onCancel, 
-  title = "¿Tomaste la medicación?",
-  message,
+  mensaje, 
+  fecha_hora, 
   confirmText = "SÍ",
   cancelText = "NO",
   alertaId = null,
-  modoSonido = "sonido",
-  horaMedicacion = null // Nueva prop opcional
+  modoSonido = "sonido"
 }) => {
   const [procesando, setProcesando] = useState(false);
 
@@ -54,23 +53,33 @@ const AlertaPopup = ({
   }, [isOpen, modoSonido]);
   if (!isOpen) return null;
 
+  // Extraer solo la hora de fecha_hora (formato HH:mm)
+  let horaSolo = '';
+  if (fecha_hora) {
+    try {
+      const d = new Date(fecha_hora);
+      // Ajustar a zona local si es necesario
+      horaSolo = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      horaSolo = '';
+    }
+  }
+
   return (
     <div className={styles.overlay}>
       <div className={styles.popup}>
         <div className={styles.iconContainer}>
           <AlarmIcon size={64} color="var(--secondary-light)" weight="fill" />
         </div>
-        
         <div className={styles.content}>
-          <h3 className={styles.title}>{title}</h3>
-          <p className={styles.message}>{message}</p>
-          {horaMedicacion && (
+          <h3 className={styles.title}>{typeof title === 'string' ? title : '¿Tomaste la medicación?'}</h3>
+          <p className={styles.message}>{mensaje}</p>
+          {horaSolo && (
             <div className={styles.horaMedicacion} style={{ marginTop: 8, color: "var(--color-secondary-dark)", fontWeight: "bold" }}>
-              Hora de medicación: {horaMedicacion}
+              Hora programada: {horaSolo}
             </div>
           )}
         </div>
-        
         <div className={styles.buttonContainer}>
           <button 
             className={styles.confirmBtn}
@@ -79,7 +88,6 @@ const AlertaPopup = ({
           >
             {procesando ? 'Confirmando...' : confirmText}
           </button>
-          
           <button 
             className={styles.cancelBtn}
             onClick={handleCancel}

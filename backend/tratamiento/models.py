@@ -210,49 +210,44 @@ class Tratamiento(models.Model):
         self.recomendaciones.append(Recomendacion.ANTICONCEPTIVOS)
 
     def generarNotificaciones(self, fecha_actual=None):
+        import pytz
+        ECUADOR_TZ = pytz.timezone('America/Guayaquil')
         if fecha_actual is None:
-            fecha_actual = timezone.now().date()
+            fecha_actual = timezone.now().astimezone(ECUADOR_TZ).date()
 
         todas_notificaciones = []
-        
-        # logs eliminados
 
         # Generar notificaciones de medicamentos
         for medicamento in self.medicamentos.all():
-            # logs eliminados
-            notificaciones_med = self._generar_notificaciones_medicamento(medicamento, fecha_actual)
-            # logs eliminados
+            notificaciones_med = self._generar_notificaciones_medicamento(medicamento, fecha_actual, tz=ECUADOR_TZ)
             todas_notificaciones.extend(notificaciones_med)
 
         # Generar notificaciones de recomendaciones
         for rec in self.recomendaciones:
-            # logs eliminados
-            notificaciones_rec = self._generar_notificaciones_recomendacion(rec, fecha_actual)
-            # logs eliminados
+            notificaciones_rec = self._generar_notificaciones_recomendacion(rec, fecha_actual, tz=ECUADOR_TZ)
             todas_notificaciones.extend(notificaciones_rec)
 
-        # logs eliminados
         return todas_notificaciones
 
-    def _generar_notificaciones_medicamento(self, medicamento, fecha_actual=None):
+    def _generar_notificaciones_medicamento(self, medicamento, fecha_actual=None, tz=None):
+        import pytz
+        if tz is None:
+            tz = pytz.timezone('America/Guayaquil')
         if fecha_actual is None:
-            fecha_actual = timezone.now().date()
+            fecha_actual = timezone.now().astimezone(tz).date()
 
         notificaciones = []
-        
-        # logs eliminados
 
         # Calcular todas las fechas de tomas sin límite
         fechas_tomas = medicamento.calcularFechasDeTomas(self.fecha_inicio)
-        # logs eliminados
-        
+        # Convertir fechas a zona horaria de Ecuador
+        fechas_tomas = [timezone.make_aware(f, tz) if f.tzinfo is None else f.astimezone(tz) for f in fechas_tomas]
+
         fechas_recordatorios = medicamento.calcularRecordatorios(fechas_tomas)
-        # logs eliminados
+        fechas_recordatorios = [timezone.make_aware(f, tz) if f.tzinfo is None else f.astimezone(tz) for f in fechas_recordatorios]
 
         # Recordatorios
-        recordatorios_creados = 0
         for fecha_recordatorio in fechas_recordatorios:
-            # Verificar si ya existe un recordatorio similar
             if not self._existe_recordatorio_similar(fecha_recordatorio):
                 recordatorio = Recordatorio(
                     mensaje=f"Recordatorio para tomar {medicamento.nombre} ({medicamento.dosis})",
@@ -261,14 +256,9 @@ class Tratamiento(models.Model):
                     tratamiento=self
                 )
                 notificaciones.append(recordatorio)
-                recordatorios_creados += 1
-            else:
-                pass
 
         # Alertas
-        alertas_creadas = 0
         for fecha_toma in fechas_tomas:
-            # Verificar si ya existe una alerta similar
             if not self._existe_alerta_similar(fecha_toma):
                 alerta = Alerta(
                     mensaje=f"Es hora de tomar {medicamento.nombre} ({medicamento.dosis})",
@@ -280,38 +270,31 @@ class Tratamiento(models.Model):
                     tiempo_espera=15
                 )
                 notificaciones.append(alerta)
-                alertas_creadas += 1
-            else:
-                pass
 
-        # logs eliminados
         return notificaciones
 
-    def _generar_notificaciones_recomendacion(self, recomendacion, fecha_actual=None):
+    def _generar_notificaciones_recomendacion(self, recomendacion, fecha_actual=None, tz=None):
+        import pytz
+        if tz is None:
+            tz = pytz.timezone('America/Guayaquil')
         if fecha_actual is None:
-            fecha_actual = timezone.now().date()
+            fecha_actual = timezone.now().astimezone(tz).date()
 
         notificaciones = []
         fecha_base = fecha_actual
         duracion = self.calcularDuracion()
 
-        # Si no hay medicamentos, usar al menos 1 día de duración
         if duracion <= 0:
             duracion = 1
 
         for i in range(duracion):
             fecha = fecha_base + timedelta(days=i)
             hora_recomendacion = datetime.combine(fecha, datetime.min.time().replace(hour=9))
+            if timezone.is_naive(hora_recomendacion):
+                hora_recomendacion = timezone.make_aware(hora_recomendacion, tz)
+            else:
+                hora_recomendacion = hora_recomendacion.astimezone(tz)
 
-            # Asegurarnos de que la hora tenga timezone
-            try:
-                hora_recomendacion = timezone.make_aware(hora_recomendacion)
-            except ValueError:
-                # Ya tiene timezone
-                pass
-
-            # Para los tests con FakeRepository, siempre creamos la notificación
-            # ya que _existe_recordatorio_similar siempre devolverá False en memoria
             recordatorio = Recordatorio(
                 mensaje=f"Recordatorio de recomendación: {recomendacion}",
                 fecha_hora=hora_recomendacion,
@@ -319,9 +302,7 @@ class Tratamiento(models.Model):
                 tratamiento=self
             )
             notificaciones.append(recordatorio)
-            # logs eliminados
 
-        # logs eliminados
         return notificaciones
 
     def _existe_alerta_similar(self, fecha_hora):

@@ -66,7 +66,10 @@ export default function Dashboard() {
     const [recordatorioPopupAbierto, setRecordatorioPopupAbierto] = useState(false);
     const [tieneNotificaciones, setTieneNotificaciones] = useState(false);
     const [contadorNotificaciones, setContadorNotificaciones] = useState(0);
+    // Estado para popups (puede seguir usándose para popups emergentes)
     const [notificaciones, setNotificaciones] = useState([]);
+    // Estado local para el modal: solo se agregan notificaciones que realmente aparecen como popup
+    const [notificacionesModal, setNotificacionesModal] = useState([]);
     const [tratamientoId] = useState(6); // ID del tratamiento actual
     // Estado global para controlar el sonido de notificaciones
     const [modoSonido, setModoSonido] = useState("sonido"); // "sonido", "silencio", "suspender"
@@ -109,13 +112,18 @@ export default function Dashboard() {
     };
 
     // Función para cargar el contador de notificaciones solo desde el frontend (popups mostrados)
-    const cargarNotificaciones = () => {
-        // Solo contar las notificaciones emergentes activas
-        let contadorEmergentes = 0;
-        if (alertaActiva) contadorEmergentes++;
-        if (recordatorioActivo) contadorEmergentes++;
-        setContadorNotificaciones(contadorEmergentes);
-        setTieneNotificaciones(contadorEmergentes > 0);
+    // Cargar notificaciones pendientes SOLO para popups automáticos (no para el modal)
+    const cargarNotificaciones = async () => {
+        try {
+            const data = await NotificacionesService.obtenerNotificacionesPendientes(tratamientoId);
+            const todas = [...(data.alertas || []), ...(data.recordatorios || [])];
+            setNotificaciones(todas);
+        } catch (error) {
+            setNotificaciones([]);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('Error cargando notificaciones reales:', error);
+            }
+        }
     };
 
     useEffect(() => {
@@ -138,10 +146,10 @@ export default function Dashboard() {
         cargarEpisodiosRecientes();
     }, []);
 
+    // Cuando se monta el Dashboard, carga las notificaciones pendientes SOLO UNA VEZ
     useEffect(() => {
-        // Cargar notificaciones al montar el componente y cuando cambien las emergentes
         cargarNotificaciones();
-    }, [tratamientoId, alertaActiva, recordatorioActivo]);
+    }, []);
 
     const handleNavegacion = (ruta) => {
         navigate(ruta);
@@ -183,39 +191,49 @@ export default function Dashboard() {
     };
 
     // Funciones para manejar las notificaciones
+    // Abrir modal: no recarga del backend, solo muestra el estado local
     const handleAbrirModalNotificaciones = () => {
         setModalNotificacionesAbierto(true);
     };
 
     const handleCerrarModalNotificaciones = () => {
         setModalNotificacionesAbierto(false);
-        // Recargar notificaciones cuando se cierre el modal por si se procesaron notificaciones
-        cargarNotificaciones();
-        // También forzar verificación de notificaciones emergentes
-        verificarNotificacionesPendientes();
     };
 
-    // Función específica para manejar la limpieza del modal (solo frontend)
+    // Limpiar solo el estado local del modal (no afecta popups ni backend)
     const handleLimpiarModalNotificaciones = () => {
-        // Solo actualizar el contador y estado de notificaciones del modal
-        // Los popups emergentes siguen independientes
-        setContadorNotificaciones(prev => {
-            // Mantener el conteo de emergentes activas
-            let contadorEmergentes = 0;
-            if (alertaActiva) contadorEmergentes++;
-            if (recordatorioActivo) contadorEmergentes++;
-            return contadorEmergentes;
-        });
-        
-        setTieneNotificaciones(prev => {
-            // Hay notificaciones si hay emergentes activas
-            return !!(alertaActiva || recordatorioActivo);
-        });
-
-        if (process.env.NODE_ENV === 'development') {
-            console.log('Modal de notificaciones limpiado (solo frontend)');
-        }
+        setNotificacionesModal([]);
     };
+
+    // Agregar notificación al modal solo si no existe ya (por id y tipo), y con icono adecuado
+    const agregarNotificacionAModal = (notificacion) => {
+        setNotificacionesModal((prev) => {
+            if (!notificacion || !notificacion.id) return prev;
+            const existe = prev.some(n => n.id === notificacion.id && n.tipo === notificacion.tipo);
+            if (existe) return prev;
+            let icono = null;
+            if (notificacion.tipo === 'alerta') {
+                icono = <SirenIcon size={32} color="#AA4D53" weight="fill" />;
+            } else if (notificacion.tipo === 'recordatorio') {
+                icono = <AlarmIcon size={32} color="#bad8ecff" weight="fill" />;
+            }
+            return [...prev, { ...notificacion, icono }];
+        });
+    };
+
+    // Cuando aparece un popup de alerta, agregarla al modal
+    useEffect(() => {
+        if (mostrarAlerta && alertaActiva) {
+            agregarNotificacionAModal({ ...alertaActiva, tipo: 'alerta' });
+        }
+    }, [mostrarAlerta, alertaActiva]);
+
+    // Cuando aparece un popup de recordatorio, agregarlo al modal
+    useEffect(() => {
+        if (mostrarRecordatorio && recordatorioActivo) {
+            agregarNotificacionAModal({ ...recordatorioActivo, tipo: 'recordatorio' });
+        }
+    }, [mostrarRecordatorio, recordatorioActivo]);
 
     const handleConfirmarAlerta = () => {
         setAlertaPopupAbierto(false);
@@ -315,8 +333,8 @@ export default function Dashboard() {
                 </div>
                 <BotonNotificacion 
                     onClick={handleAbrirModalNotificaciones}
-                    hasNotifications={tieneNotificaciones}
-                    notificationCount={contadorNotificaciones}
+                    hasNotifications={notificacionesModal.length > 0}
+                    notificationCount={notificacionesModal.length}
                 />
             </div>
 
@@ -378,7 +396,7 @@ export default function Dashboard() {
                 isOpen={modalNotificacionesAbierto}
                 onClose={handleCerrarModalNotificaciones}
                 tratamientoId={tratamientoId}
-                notificacionesExternas={notificaciones}
+                notificacionesExternas={notificacionesModal}
                 onNotificacionesChange={handleLimpiarModalNotificaciones}
                 modoSonido={modoSonido}
                 setModoSonido={setModoSonido}

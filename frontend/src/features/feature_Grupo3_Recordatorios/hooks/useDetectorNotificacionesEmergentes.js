@@ -40,16 +40,10 @@ const useDetectorNotificacionesEmergentes = () => {
 
   // Función para mostrar una alerta
   const mostrarAlertaPopup = async (alerta) => {
-    console.log(`🎯 INTENTANDO MOSTRAR ALERTA POPUP:`, alerta);
     const alertaKey = `alerta_${alerta.id}_${alerta.fecha_hora}`;
-    console.log(`🔑 Clave de alerta: ${alertaKey}`);
-    
     if (alertasProcessadasRef.current.has(alertaKey)) {
-      console.log(`⚠️ Alerta ya procesada, saltando: ${alertaKey}`);
       return;
     }
-
-    console.log(`✅ Alerta nueva, procesando: ${alertaKey}`);
     alertasProcessadasRef.current.add(alertaKey);
 
     // Agregar alerta a notificaciones mostradas (si no existe ya)
@@ -63,7 +57,7 @@ const useDetectorNotificacionesEmergentes = () => {
 
     setAlertaActual(alerta);
     setMostrarAlerta(true);
-    console.log(`🚨 POPUP DE ALERTA ACTIVADO - mostrarAlerta=true`);
+    // ...
 
     // Auto-ocultar después de 1 minuto (60000ms)
     const timeoutId = setTimeout(() => {
@@ -77,16 +71,10 @@ const useDetectorNotificacionesEmergentes = () => {
 
   // Función para mostrar un recordatorio
   const mostrarRecordatorioPopup = async (recordatorio) => {
-    console.log(`🎯 INTENTANDO MOSTRAR RECORDATORIO POPUP:`, recordatorio);
     const recordatorioKey = `recordatorio_${recordatorio.id}_${recordatorio.fecha_hora}`;
-    console.log(`🔑 Clave de recordatorio: ${recordatorioKey}`);
-    
     if (recordatoriosProcessadosRef.current.has(recordatorioKey)) {
-      console.log(`⚠️ Recordatorio ya procesado, saltando: ${recordatorioKey}`);
       return;
     }
-
-    console.log(`✅ Recordatorio nuevo, procesando: ${recordatorioKey}`);
     recordatoriosProcessadosRef.current.add(recordatorioKey);
 
     // Agregar recordatorio a notificaciones mostradas (si no existe ya)
@@ -100,7 +88,7 @@ const useDetectorNotificacionesEmergentes = () => {
 
     setRecordatorioActual(recordatorio);
     setMostrarRecordatorio(true);
-    console.log(`📝 POPUP DE RECORDATORIO ACTIVADO - mostrarRecordatorio=true`);
+    // ...
 
     // Auto-ocultar después de 1 minuto (60000ms)
     const timeoutId = setTimeout(() => {
@@ -131,7 +119,7 @@ const useDetectorNotificacionesEmergentes = () => {
         clearTimeout(intervalosActivosRef.current.get(alertaKey));
         intervalosActivosRef.current.delete(alertaKey);
       }
-      
+      // Solo ocultar el popup, NO eliminar del array de notificacionesMostradas
       setMostrarAlerta(false);
       setAlertaActual(null);
     } catch (error) {
@@ -158,7 +146,7 @@ const useDetectorNotificacionesEmergentes = () => {
         clearTimeout(intervalosActivosRef.current.get(alertaKey));
         intervalosActivosRef.current.delete(alertaKey);
       }
-      
+      // Solo ocultar el popup, NO eliminar del array de notificacionesMostradas
       setMostrarAlerta(false);
       setAlertaActual(null);
     } catch (error) {
@@ -184,7 +172,7 @@ const useDetectorNotificacionesEmergentes = () => {
         clearTimeout(intervalosActivosRef.current.get(recordatorioKey));
         intervalosActivosRef.current.delete(recordatorioKey);
       }
-      
+      // Solo ocultar el popup, NO eliminar del array de notificacionesMostradas
       setMostrarRecordatorio(false);
       setRecordatorioActual(null);
     } catch (error) {
@@ -194,20 +182,20 @@ const useDetectorNotificacionesEmergentes = () => {
 
   // Función principal para verificar notificaciones
   const verificarNotificaciones = async () => {
-    console.log(`🚀 INICIANDO VERIFICACIÓN DE NOTIFICACIONES...`);
+    console.log('[Notificaciones] Revisando notificaciones pendientes...');
     try {
       const { alertas, recordatorios } = await obtenerNotificaciones();
 
-      console.log(`🎯 VERIFICANDO NOTIFICACIONES - Alertas: ${alertas.length}, Recordatorios: ${recordatorios.length}`);
+      // ...
 
       // Procesar recordatorios primero
       for (const recordatorio of recordatorios) {
-        console.log(`📝 Evaluando recordatorio ID ${recordatorio.id}, estado: ${recordatorio.estado}`);
+        // ...
         if ((recordatorio.estado === 'activo' || recordatorio.estado === 'ACTIVO') && recordatorio.fecha_hora) {
           // Comparar usando hora local del usuario
           const ahoraLocal = new Date();
           const fechaRecordatorioLocal = new Date(recordatorio.fecha_hora);
-          console.log(`⏰ [RECORDATORIO] Comparando hora LOCAL: fechaRecordatorio=${fechaRecordatorioLocal.toLocaleString()} <= ahora=${ahoraLocal.toLocaleString()} ?`, fechaRecordatorioLocal <= ahoraLocal);
+          // ...
           if (fechaRecordatorioLocal <= ahoraLocal) {
             // Mostrar popup solo si está en la hora, pero siempre guardar en la lista del modal
             setNotificacionesMostradas(prev => {
@@ -217,12 +205,12 @@ const useDetectorNotificacionesEmergentes = () => {
               }
               return prev;
             });
-            console.log(`✅ Mostrando recordatorio ID ${recordatorio.id}`);
+            // ...
             await mostrarRecordatorioPopup(recordatorio);
           } else {
             // Si la fecha ya pasó pero no está activa, igual guardar en la lista del modal
             const ahoraLocal = new Date();
-            console.log(`⏰ [RECORDATORIO] Comparando hora LOCAL (no activo): fechaRecordatorio=${fechaRecordatorioLocal.toLocaleString()} < ahora=${ahoraLocal.toLocaleString()} ?`, fechaRecordatorioLocal < ahoraLocal);
+            // ...
             if (fechaRecordatorioLocal < ahoraLocal) {
               setNotificacionesMostradas(prev => {
                 const existe = prev.some(n => n.id === recordatorio.id && n.fecha_hora === recordatorio.fecha_hora);
@@ -232,14 +220,14 @@ const useDetectorNotificacionesEmergentes = () => {
                 return prev;
               });
             }
-            console.log(`⏭️ Recordatorio ID ${recordatorio.id} omitido por hora futura: ${recordatorio.fecha_hora}`);
+            // ...
           }
         } else {
           // Si la fecha ya pasó pero el estado no es activo, igual guardar en la lista del modal
           if (recordatorio.fecha_hora) {
             const ahoraLocal = new Date();
             const fechaRecordatorioLocal = new Date(recordatorio.fecha_hora);
-            console.log(`⏰ [RECORDATORIO] Comparando hora LOCAL (no activo, else): fechaRecordatorio=${fechaRecordatorioLocal.toLocaleString()} < ahora=${ahoraLocal.toLocaleString()} ?`, fechaRecordatorioLocal < ahoraLocal);
+          // ...
             if (fechaRecordatorioLocal < ahoraLocal) {
               setNotificacionesMostradas(prev => {
                 const existe = prev.some(n => n.id === recordatorio.id && n.fecha_hora === recordatorio.fecha_hora);
@@ -250,18 +238,18 @@ const useDetectorNotificacionesEmergentes = () => {
               });
             }
           }
-          console.log(`⏭️ Recordatorio ID ${recordatorio.id} omitido por estado: ${recordatorio.estado}`);
+            // ...
         }
       }
 
       // Procesar alertas
       for (const alerta of alertas) {
-        console.log(`🚨 Evaluando alerta ID ${alerta.id}, estado: ${alerta.estado}`);
+        // ...
         if ((['SIN_CONFIRMAR', 'CONFIRMADO_TARDE', 'CONFIRMADO_MUY_TARDE', 'activo', 'sin_confirmar', 'confirmado_tarde', 'confirmado_muy_tarde'].includes(alerta.estado)) && alerta.fecha_hora) {
           // Comparar usando hora local del usuario
           const ahoraLocal = new Date();
           const fechaAlertaLocal = new Date(alerta.fecha_hora);
-          console.log(`⏰ [ALERTA] Comparando hora LOCAL: fechaAlerta=${fechaAlertaLocal.toLocaleString()} <= ahora=${ahoraLocal.toLocaleString()} ?`, fechaAlertaLocal <= ahoraLocal);
+          // ...
           if (fechaAlertaLocal <= ahoraLocal) {
             setNotificacionesMostradas(prev => {
               const existe = prev.some(n => n.id === alerta.id && n.fecha_hora === alerta.fecha_hora);
@@ -270,12 +258,12 @@ const useDetectorNotificacionesEmergentes = () => {
               }
               return prev;
             });
-            console.log(`✅ Mostrando alerta ID ${alerta.id}`);
+            // ...
             await mostrarAlertaPopup(alerta);
           } else {
             // Si la fecha ya pasó pero no está activa, igual guardar en la lista del modal
             const ahoraLocal = new Date();
-            console.log(`⏰ [ALERTA] Comparando hora LOCAL (no activa): fechaAlerta=${fechaAlertaLocal.toLocaleString()} < ahora=${ahoraLocal.toLocaleString()} ?`, fechaAlertaLocal < ahoraLocal);
+            // ...
             if (fechaAlertaLocal < ahoraLocal) {
               setNotificacionesMostradas(prev => {
                 const existe = prev.some(n => n.id === alerta.id && n.fecha_hora === alerta.fecha_hora);
@@ -285,14 +273,14 @@ const useDetectorNotificacionesEmergentes = () => {
                 return prev;
               });
             }
-            console.log(`⏭️ Alerta ID ${alerta.id} omitida por hora futura: ${alerta.fecha_hora}`);
+            // ...
           }
         } else {
           // Si la fecha ya pasó pero el estado no es válido, igual guardar en la lista del modal
           if (alerta.fecha_hora) {
             const ahoraLocal = new Date();
             const fechaAlertaLocal = new Date(alerta.fecha_hora);
-            console.log(`⏰ [ALERTA] Comparando hora LOCAL (no activa, else): fechaAlerta=${fechaAlertaLocal.toLocaleString()} < ahora=${ahoraLocal.toLocaleString()} ?`, fechaAlertaLocal < ahoraLocal);
+          // ...
             if (fechaAlertaLocal < ahoraLocal) {
               setNotificacionesMostradas(prev => {
                 const existe = prev.some(n => n.id === alerta.id && n.fecha_hora === alerta.fecha_hora);
@@ -303,34 +291,42 @@ const useDetectorNotificacionesEmergentes = () => {
               });
             }
           }
-          console.log(`⏭️ Alerta ID ${alerta.id} omitida por estado: ${alerta.estado}`);
+            // ...
         }
       }
 
-      console.log(`✅ VERIFICACIÓN COMPLETADA - Procesamiento terminado`);
+      // ...
 
     } catch (error) {
       console.error('Error verificando notificaciones:', error);
     }
   };
 
-  // Efecto principal para el polling
-  // El pacienteId debe ser proporcionado por el contexto de usuario autenticado
+  // Efecto principal para el polling automático cada 1 minuto
   useEffect(() => {
-    const pacienteId = /* obtener pacienteId del contexto de usuario autenticado */ null;
-    if (!pacienteId) return;
+    let interval = null;
+    let cancelado = false;
 
-    // Verificar inmediatamente al montar
-    verificarNotificaciones(pacienteId);
+    const iniciarPolling = async () => {
+      const pacienteId = await NotificacionesService.obtenerPacienteId();
+      if (!pacienteId) {
+        console.warn('No se pudo obtener pacienteId para el polling automático');
+        return;
+      }
+      // Verificar inmediatamente al montar
+      if (!cancelado) await verificarNotificaciones();
+      // Configurar polling cada 1 minuto
+      interval = setInterval(() => {
+        if (!cancelado) verificarNotificaciones();
+      }, 60000);
+    };
 
-    // Configurar polling cada 30 segundos
-    const interval = setInterval(() => {
-      verificarNotificaciones(pacienteId);
-    }, 30000);
+    iniciarPolling();
 
     // Cleanup
     return () => {
-      clearInterval(interval);
+      cancelado = true;
+      if (interval) clearInterval(interval);
       // Limpiar todos los timeouts activos
       intervalosActivosRef.current.forEach((timeoutId) => {
         clearTimeout(timeoutId);

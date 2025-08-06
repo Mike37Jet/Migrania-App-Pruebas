@@ -63,7 +63,7 @@ class Notificacion(models.Model):
     mensaje = models.CharField(max_length=255)
     fecha_hora = models.DateTimeField()
     estado = models.CharField(max_length=30, choices=EstadoNotificacion.choices, default=EstadoNotificacion.ACTIVO)
-    tratamiento = models.ForeignKey('Tratamiento', related_name='%(class)ss', on_delete=models.CASCADE, null=True)
+    tratamiento = models.ForeignKey('Tratamiento', related_name='notificaciones_%(class)s', on_delete=models.CASCADE, null=True)
 
     class Meta:
         abstract = True
@@ -327,7 +327,7 @@ class Tratamiento(models.Model):
     def _existe_alerta_similar(self, fecha_hora):
         # Busca si ya existe una alerta similar en la misma fecha/hora
         margen_tiempo = timedelta(minutes=1)
-        return self.alertas.filter(
+        return self.notificaciones_alerta.filter(
             fecha_hora__gte=fecha_hora - margen_tiempo,
             fecha_hora__lte=fecha_hora + margen_tiempo
         ).exists()
@@ -335,7 +335,7 @@ class Tratamiento(models.Model):
     def _existe_recordatorio_similar(self, fecha_hora):
         # Busca si ya existe un recordatorio similar en la misma fecha/hora
         margen_tiempo = timedelta(minutes=1)
-        return self.recordatorios.filter(
+        return self.notificaciones_recordatorio.filter(
             fecha_hora__gte=fecha_hora - margen_tiempo,
             fecha_hora__lte=fecha_hora + margen_tiempo
         ).exists()
@@ -370,8 +370,8 @@ class Tratamiento(models.Model):
     def obtenerSiguienteNotificacion(self, ahora=None):
         if ahora is None:
             ahora = timezone.now()
-        alertas = self.alertas.filter(estado=EstadoNotificacion.ACTIVO, fecha_hora__gte=ahora).order_by('fecha_hora').first()
-        recordatorios = self.recordatorios.filter(estado=EstadoNotificacion.ACTIVO, fecha_hora__gte=ahora).order_by('fecha_hora').first()
+        alertas = self.notificaciones_alerta.filter(estado=EstadoNotificacion.ACTIVO, fecha_hora__gte=ahora).order_by('fecha_hora').first()
+        recordatorios = self.notificaciones_recordatorio.filter(estado=EstadoNotificacion.ACTIVO, fecha_hora__gte=ahora).order_by('fecha_hora').first()
 
         if alertas and recordatorios:
             return alertas if alertas.fecha_hora < recordatorios.fecha_hora else recordatorios
@@ -384,11 +384,11 @@ class Tratamiento(models.Model):
         
         # Combinar alertas activas Y sin confirmar con recordatorios activos
         # PERO solo si ya es tiempo de mostrarlas (fecha_hora <= ahora)
-        alertas_pendientes = list(self.alertas.filter(
+        alertas_pendientes = list(self.notificaciones_alerta.filter(
             estado__in=[EstadoNotificacion.ACTIVO, EstadoNotificacion.SIN_CONFIRMAR],
             fecha_hora__lte=ahora  # Solo las que ya es momento de mostrar
         ))
-        recordatorios_pendientes = list(self.recordatorios.filter(
+        recordatorios_pendientes = list(self.notificaciones_recordatorio.filter(
             estado=EstadoNotificacion.ACTIVO,
             fecha_hora__lte=ahora  # Solo las que ya es momento de mostrar
         ))
@@ -408,7 +408,7 @@ class Tratamiento(models.Model):
         notificaciones_procesadas = []
 
         # Procesar alertas pendientes
-        alertas_a_enviar = self.alertas.filter(
+        alertas_a_enviar = self.notificaciones_alerta.filter(
             estado=EstadoNotificacion.ACTIVO,
             fecha_hora__lte=ahora
         ).order_by('fecha_hora')
@@ -430,7 +430,7 @@ class Tratamiento(models.Model):
                     notificaciones_procesadas.append(nueva_alerta)
 
         # Procesar recordatorios pendientes
-        recordatorios_a_enviar = self.recordatorios.filter(
+        recordatorios_a_enviar = self.notificaciones_recordatorio.filter(
             estado=EstadoNotificacion.ACTIVO,
             fecha_hora__lte=ahora
         ).order_by('fecha_hora')

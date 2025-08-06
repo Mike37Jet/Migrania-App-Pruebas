@@ -1,8 +1,11 @@
+
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 import logging
+
+from usuarios.models import PacienteProfile
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +31,63 @@ from .permissions import (
 
 
 class TratamientoViewSet(viewsets.ModelViewSet):
+    @action(detail=False, methods=['get'], url_path='alertas-sin-confirmar/(?P<paciente_id>[^/.]+)')
+    def alertas_sin_confirmar(self, request, paciente_id=None):
+        """Obtener todas las alertas en estado SIN_CONFIRMAR de los tratamientos de un paciente"""
+        tratamientos = Tratamiento.objects.filter(paciente_id=paciente_id)
+        alertas = Alerta.objects.filter(tratamiento__in=tratamientos, estado='sin_confirmar')
+        serializer = AlertaSerializer(alertas, many=True)
+        return Response(serializer.data)
+    @action(detail=False, methods=['get'], url_path='recordatorios-por-paciente/(?P<paciente_id>[^/.]+)')
+    def recordatorios_por_paciente(self, request, paciente_id=None):
+        """Obtener todos los recordatorios asociados a los tratamientos de un paciente"""
+        tratamientos = Tratamiento.objects.filter(paciente_id=paciente_id)
+        recordatorios = Recordatorio.objects.filter(tratamiento__in=tratamientos)
+        serializer = RecordatorioSerializer(recordatorios, many=True)
+        return Response(serializer.data)
+    @action(detail=False, methods=['get'], url_path='mis-tratamientos')
+    def mis_tratamientos(self, request):
+        """Devuelve los tratamientos del usuario autenticado (si es paciente)"""
+        user = request.user
+        if hasattr(user, 'perfil_paciente'):
+            tratamientos = Tratamiento.objects.filter(paciente=user.perfil_paciente)
+            serializer = self.get_serializer(tratamientos, many=True)
+            return Response(serializer.data)
+        else:
+            return Response({'error': 'El usuario no es un paciente'}, status=status.HTTP_403_FORBIDDEN)
+    @action(detail=True, methods=['post'], url_path='asociar-a-paciente/(?P<paciente_id>\d+)')
+    def asociar_a_paciente(self, request, pk=None, paciente_id=None):
+        """Asociar un tratamiento existente a un paciente por su id"""
+        try:
+            try:
+                tratamiento = self.get_object()
+            except Exception:
+                return Response({'success': False, 'error': f'Tratamiento con id {pk} no encontrado o no accesible para este usuario.'}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                paciente = PacienteProfile.objects.get(id=paciente_id)
+            except PacienteProfile.DoesNotExist:
+                return Response({'success': False, 'error': f'Paciente con id {paciente_id} no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+            tratamiento.paciente = paciente
+            tratamiento.save()
+            return Response({'success': True, 'mensaje': f'Tratamiento {tratamiento.id} asociado al paciente {paciente_id}'} )
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=False, methods=['get'], url_path='mi-paciente-id')
+    def mi_paciente_id(self, request):
+        """Devuelve el id del paciente asociado al usuario autenticado"""
+        user = request.user
+        if hasattr(user, 'perfil_paciente'):
+            paciente_id = user.perfil_paciente.id
+            return Response({'paciente_id': paciente_id})
+        else:
+            return Response({'error': 'El usuario no es un paciente'}, status=status.HTTP_404_NOT_FOUND)
+    @action(detail=False, methods=['get'], url_path='alertas-por-paciente/(?P<paciente_id>[^/.]+)')
+    def alertas_por_paciente(self, request, paciente_id=None):
+        """Obtener todas las alertas asociadas a los tratamientos de un paciente"""
+        tratamientos = Tratamiento.objects.filter(paciente_id=paciente_id)
+        alertas = Alerta.objects.filter(tratamiento__in=tratamientos)
+        serializer = AlertaSerializer(alertas, many=True)
+        return Response(serializer.data)
     queryset = Tratamiento.objects.all()
     serializer_class = TratamientoSerializer
 
@@ -58,8 +118,8 @@ class TratamientoViewSet(viewsets.ModelViewSet):
         logger.info(f"🔍 get_queryset - Usuario: {user} (ID: {user.id if user else 'None'})")
         
         # Si es un paciente, filtrar por sus propios tratamientos
-        if hasattr(user, 'pacienteprofile'):
-            paciente_profile = user.pacienteprofile
+        if hasattr(user, 'perfil_paciente'):
+            paciente_profile = user.perfil_paciente
             queryset = Tratamiento.objects.filter(paciente=paciente_profile)
             logger.info(f"🔍 Usuario es paciente (ID: {paciente_profile.id}), filtrando tratamientos...")
             logger.info(f"🔍 Tratamientos encontrados para paciente: {queryset.count()}")
@@ -106,7 +166,7 @@ class TratamientoViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         serializer.save(activo=False, fecha_cancelacion=timezone.now())
-        TratamientoService.cancelar_notificaciones(tratamiento)
+        self.service.cancelar_notificaciones(tratamiento)
 
         return Response(serializer.data)
 
@@ -114,12 +174,6 @@ class TratamientoViewSet(viewsets.ModelViewSet):
     def modificar(self, request, pk=None):
         tratamiento = self.get_object()
         data = request.data
-
-        # Actualizar campos principales
-        tratamiento.frecuencia = data.get('frecuencia', tratamiento.frecuencia)
-        tratamiento.duracion_dias = data.get('duracion_dias', tratamiento.duracion_dias)
-        tratamiento.hora_de_inicio = data.get('hora_de_inicio', tratamiento.hora_de_inicio)
-        tratamiento.save()
 
         # Reemplazar medicamentos
         if 'medicamentos' in data:
@@ -130,11 +184,10 @@ class TratamientoViewSet(viewsets.ModelViewSet):
 
         # Reemplazar recomendaciones
         if 'recomendaciones' in data:
-            tratamiento.recomendaciones.clear()
-            for rec in data['recomendaciones']:
-                Recomendacion.objects.create(tratamiento=tratamiento, descripcion=rec['descripcion'])
+            tratamiento.recomendaciones = [rec['descripcion'] for rec in data['recomendaciones']]
+            tratamiento.save()
 
-        TratamientoService.cancelar_notificaciones(tratamiento)
+        self.service.cancelar_notificaciones(tratamiento)
         return Response(self.get_serializer(tratamiento).data)
 
     @action(detail=False, methods=['get'], url_path='seguimiento/(?P<paciente_id>[^/.]+)')

@@ -3,6 +3,10 @@ from django.utils import timezone
 from tratamiento.models import Medicamento, Tratamiento, Recordatorio, Alerta, EstadoNotificacion
 
 class TratamientoService:
+    def cancelar_notificaciones(self, tratamiento):
+        """Cancela todas las notificaciones (alertas y recordatorios) asociadas a un tratamiento."""
+        Alerta.objects.filter(tratamiento=tratamiento).delete()
+        Recordatorio.objects.filter(tratamiento=tratamiento).delete()
     def __init__(self, repository):
         self.repository = repository
 

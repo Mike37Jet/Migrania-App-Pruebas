@@ -288,24 +288,32 @@ export default function Dashboard() {
             return !!(alertaActiva || recordatorioActivo);
         });
 
-        console.log('Modal de notificaciones limpiado (solo frontend)');
+        if (process.env.NODE_ENV === 'development') {
+            console.log('Modal de notificaciones limpiado (solo frontend)');
+        }
     };
 
     const handleConfirmarAlerta = () => {
         setAlertaPopupAbierto(false);
-        console.log('Alerta confirmada');
+        if (process.env.NODE_ENV === 'development') {
+            console.log('Alerta confirmada');
+        }
         // Recargar notificaciones después de confirmar alerta
         cargarNotificaciones();
     };
 
     const handleCancelarAlerta = () => {
         setAlertaPopupAbierto(false);
-        console.log('Alerta cancelada');
+        if (process.env.NODE_ENV === 'development') {
+            console.log('Alerta cancelada');
+        }
     };
 
     const handleCerrarRecordatorio = () => {
         setRecordatorioPopupAbierto(false);
-        console.log('Recordatorio cerrado');
+        if (process.env.NODE_ENV === 'development') {
+            console.log('Recordatorio cerrado');
+        }
         // Recargar notificaciones después de cerrar recordatorio
         cargarNotificaciones();
     };

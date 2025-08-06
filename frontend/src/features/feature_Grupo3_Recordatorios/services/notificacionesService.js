@@ -165,13 +165,17 @@ export class NotificacionesService {
         return { success: true, message: 'Alerta de prueba marcada como NO tomada (simulado)' };
       }
 
-      const TEMP_TOKEN_PACIENTE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MjUwODg2LCJpYXQiOjE3NTQyNDcyODYsImp0aSI6IjIzOGE2OTc5Y2EzZTRiMzE5MzI4ZTEyMDQ4ZWRmMTRkIiwidXNlcl9pZCI6IjU4In0.EQafLInInPtkzjXy9Tw0tKSVoZkJ2WcqzWnzQZvC1EA";
+      // Usar el token real del usuario autenticado
+      let token = localStorage.getItem('access_token') || localStorage.getItem('access') || localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No se encontró token de sesión');
+      }
 
       const response = await fetch(`${API_BASE_URL}/tratamientos/alerta/${alertaId}/estado/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${TEMP_TOKEN_PACIENTE}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           nuevo_estado: 'no_tomado',
@@ -198,36 +202,13 @@ export class NotificacionesService {
     console.log(`🔧 Procesando notificaciones para tratamiento ID: ${tratamientoId}`);
     
     try {
-      // Intentar obtener token del localStorage primero (del login real)
+      // Obtener token real del usuario
       let token = localStorage.getItem('access_token') || localStorage.getItem('access') || localStorage.getItem('authToken');
-      
-      // Si no hay token del login, usar el temporal para desarrollo
-      const TEMP_TOKEN_PACIENTE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MjUwODg2LCJpYXQiOjE3NTQyNDcyODYsImp0aSI6IjIzOGE2OTc5Y2EzZTRiMzE5MzI4ZTEyMDQ4ZWRmMTRkIiwidXNlcl9pZCI6IjU4In0.EQafLInInPtkzjXy9Tw0tKSVoZkJ2WcqzWnzQZvC1EA";
-      
       if (!token) {
-        console.log('🔑 No hay token en localStorage, usando token temporal');
-        token = TEMP_TOKEN_PACIENTE;
-      } else {
-        console.log('🔑 Usando token del localStorage');
+        throw new Error('No se encontró token de sesión');
       }
       
-      // Función para verificar si el token ha expirado
-      const isTokenExpired = (token) => {
-        if (!token) return true;
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const currentTime = Math.floor(Date.now() / 1000);
-          return payload.exp < currentTime;
-        } catch (error) {
-          return true;
-        }
-      };
-
-      // Si el token está expirado, simular procesamiento exitoso
-      if (isTokenExpired(token)) {
-        console.warn('⚠️ Token expirado, simulando procesamiento de notificaciones');
-        return { procesadas: 0, mensaje: 'Procesamiento simulado (token expirado)' };
-      }
+      // (Opcional) Aquí podrías agregar lógica para manejar token expirado, pero no usar tokens temporales ni simulaciones.
       
       console.log(`📡 Llamando a API: POST /tratamientos/${tratamientoId}/procesar-notificaciones/`);
       
@@ -273,10 +254,8 @@ export class NotificacionesService {
     
     try {
       let token = localStorage.getItem('access_token') || localStorage.getItem('access') || localStorage.getItem('authToken');
-      const TEMP_TOKEN_PACIENTE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MjUwODg2LCJpYXQiOjE3NTQyNDcyODYsImp0aSI6IjIzOGE2OTc5Y2EzZTRiMzE5MzI4ZTEyMDQ4ZWRmMTRkIiwidXNlcl9pZCI6IjU4In0.EQafLInInPtkzjXy9Tw0tKSVoZkJ2WcqzWnzQZvC1EA";
-      
       if (!token) {
-        token = TEMP_TOKEN_PACIENTE;
+        throw new Error('No se encontró token de sesión');
       }
       
       const response = await fetch(`${API_BASE_URL}/tratamientos/${tratamientoId}/generar-notificaciones/`, {
@@ -476,41 +455,12 @@ export class NotificacionesService {
     // Obtener tratamientos activos del paciente
     static async obtenerTratamientosActivos() {
         try {
-            // Intentar obtener token del localStorage primero (del login real)
+            // Obtener token real del usuario
             let token = localStorage.getItem('access_token') || localStorage.getItem('access') || localStorage.getItem('authToken');
-            
-            // Si no hay token del login, usar el temporal para desarrollo
-            const TEMP_TOKEN_PACIENTE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MjUwODg2LCJpYXQiOjE3NTQyNDcyODYsImp0aSI6IjIzOGE2OTc5Y2EzZTRiMzE5MzI4ZTEyMDQ4ZWRmMTRkIiwidXNlcl9pZCI6IjU4In0.EQafLInInPtkzjXy9Tw0tKSVoZkJ2WcqzWnzQZvC1EA";
-            
             if (!token) {
-                token = TEMP_TOKEN_PACIENTE;
-                console.log('🔑 Usando token temporal para desarrollo');
-            } else {
-                console.log('🔑 Usando token del login actual');
+                throw new Error('No se encontró token de sesión');
             }
-            
-            // Función para verificar si el token ha expirado
-            const isTokenExpired = (token) => {
-                if (!token) return true;
-                try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    const currentTime = Math.floor(Date.now() / 1000);
-                    return payload.exp < currentTime;
-                } catch (error) {
-                    return true;
-                }
-            };
-
-            // Si el token está expirado, ir directamente al fallback
-            if (isTokenExpired(token)) {
-                console.warn('Token ha expirado, usando datos de desarrollo');
-                return [{
-                    id: 1,  // ID de prueba que coincide con generar_notificaciones
-                    activo: true,
-                    tipo_migraña: 'Episódica',
-                    fecha_inicio: new Date().toISOString()
-                }];
-            }
+            // (Opcional) Aquí podrías agregar lógica para manejar token expirado, pero no usar tokens temporales ni simulaciones.
 
             const response = await fetch(`${API_BASE_URL}/tratamientos/`, {
                 method: 'GET',

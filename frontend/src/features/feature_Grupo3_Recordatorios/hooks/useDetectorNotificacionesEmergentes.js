@@ -62,7 +62,7 @@ const useDetectorNotificacionesEmergentes = () => {
     // Auto-ocultar después de 1 minuto (60000ms)
     const timeoutId = setTimeout(() => {
       if (alertaActual && alertaActual.id === alerta.id) {
-        handleCancelarAlerta(alerta);
+        handleIgnorarAlertaPorTimeout(alerta);
       }
     }, 60000);
 
@@ -127,30 +127,51 @@ const useDetectorNotificacionesEmergentes = () => {
     }
   };
 
+  // Cancelar manualmente: solo marcar como no tomada en frontend, NO avisar al backend para reenvío
   const handleCancelarAlerta = async (alerta = null) => {
     try {
-      // Usar la alerta pasada como parámetro o la que está en el estado
       const alertaACancelar = alerta || alertaActual;
-      
       if (!alertaACancelar) {
         console.warn('No hay alerta para cancelar');
         return;
       }
-
-      // Marcar como "no_tomado" cuando se cancela o se auto-oculta
       await NotificacionesService.confirmarAlertaNoTomada(alertaACancelar.id);
-      
       // Limpiar timeout si existe
       const alertaKey = `alerta_${alertaACancelar.id}_${alertaACancelar.fecha_hora}`;
       if (intervalosActivosRef.current.has(alertaKey)) {
         clearTimeout(intervalosActivosRef.current.get(alertaKey));
         intervalosActivosRef.current.delete(alertaKey);
       }
-      // Solo ocultar el popup, NO eliminar del array de notificacionesMostradas
       setMostrarAlerta(false);
       setAlertaActual(null);
     } catch (error) {
       console.error('Error cancelando alerta:', error);
+    }
+  };
+
+  // Ignorar por timeout: marcar como no tomada y avisar al backend para reenvío
+  const handleIgnorarAlertaPorTimeout = async (alerta = null) => {
+    try {
+      const alertaAIgnorar = alerta || alertaActual;
+      if (!alertaAIgnorar) {
+        console.warn('No hay alerta para ignorar por timeout');
+        return;
+      }
+      await NotificacionesService.confirmarAlertaNoTomada(alertaAIgnorar.id);
+      try {
+        await NotificacionesService.marcarAlertaNoConfirmada(alertaAIgnorar.id);
+      } catch (e) {
+        console.error('Error notificando al backend para reenvío de alerta (timeout):', e);
+      }
+      const alertaKey = `alerta_${alertaAIgnorar.id}_${alertaAIgnorar.fecha_hora}`;
+      if (intervalosActivosRef.current.has(alertaKey)) {
+        clearTimeout(intervalosActivosRef.current.get(alertaKey));
+        intervalosActivosRef.current.delete(alertaKey);
+      }
+      setMostrarAlerta(false);
+      setAlertaActual(null);
+    } catch (error) {
+      console.error('Error ignorando alerta por timeout:', error);
     }
   };
 

@@ -1,3 +1,58 @@
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.utils import timezone
+import logging
+
+from usuarios.models import PacienteProfile
+
+logger = logging.getLogger(__name__)
+
+from .models import Tratamiento, Medicamento, Recomendacion, Alerta, Recordatorio
+from .serializers import (
+    TratamientoCreateSerializer,
+    TratamientoSerializer,
+    TratamientoResumenSerializer,
+    TratamientoCancelarSerializer,
+    AlertaSerializer,
+    RecordatorioSerializer,
+    CambiarEstadoAlertaSerializer,
+    NotificacionesPendientesSerializer
+)
+from .services import TratamientoService
+from .repositories import DjangoRepository
+from .permissions import (
+    EsMedico,
+    EsPaciente,
+    EsPropietarioDelTratamientoOPersonalMedico,
+    PuedeConfirmarToma,
+)
+
+
+class TratamientoViewSet(viewsets.ModelViewSet):
+    # ...otros métodos...
+
+    @action(detail=False, methods=['post'], url_path='alerta/(?P<alerta_id>\d+)/no-confirmada')
+    def alerta_no_confirmada(self, request, alerta_id=None):
+        """Endpoint para avisar que una alerta no fue confirmada y disparar la lógica de reenvío (segunda/tercera alerta)"""
+        from .models import Alerta
+        from django.utils import timezone
+        try:
+            alerta = Alerta.objects.get(id=alerta_id)
+        except Alerta.DoesNotExist:
+            return Response({'detail': 'Alerta no encontrada'}, status=404)
+
+        # Marcar como no tomada y disparar reenvío
+        alerta.confirmarNoTomado()
+        alerta.save()
+
+        # Intentar crear la siguiente alerta si corresponde
+        nueva_alerta = alerta.reenviar(timezone.now())
+        if nueva_alerta:
+            nueva_alerta.save()
+            return Response({'detail': 'Alerta marcada como no confirmada. Nueva alerta generada.', 'nueva_alerta_id': nueva_alerta.id}, status=200)
+        else:
+            return Response({'detail': 'Alerta marcada como no confirmada. No se generó nueva alerta.'}, status=200)
 
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action

@@ -1,7 +1,29 @@
+
 // Servicio para consumir las APIs de notificaciones
 const API_BASE_URL = 'http://localhost:8000/api';
 
 export class NotificacionesService {
+  // Avisar al backend que una alerta no fue confirmada (para generar segunda/tercera alerta)
+  static async marcarAlertaNoConfirmada(alertaId) {
+    try {
+      let token = localStorage.getItem('access_token') || localStorage.getItem('access') || localStorage.getItem('authToken');
+      if (!token) throw new Error('No se encontró token de sesión');
+      const response = await fetch(`${API_BASE_URL}/tratamientos/alerta/${alertaId}/no-confirmada/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('❌ Error al marcar alerta como no confirmada:', error);
+      throw error;
+    }
+  }
   // Obtener el pacienteId usando el endpoint protegido y el token de sesión
   static async obtenerPacienteId() {
     try {
